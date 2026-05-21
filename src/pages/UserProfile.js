@@ -1,5 +1,5 @@
 // src/pages/UserProfile.js
-import { Column, Container, Text, Card } from "@chimuka_amel/lumina-ui";
+import { Column, Container, Text, Card } from "@neuralumina/lumina-ui";
 
 export function UserProfile({ params, query }) {
   const userId = params.id;

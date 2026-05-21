@@ -1,12 +1,12 @@
-import { Column, Container, Row, Text, Card, Image, Divider, Button } from "@chimuka_amel/lumina-ui";
+import { Column, Container, Row, Text, Card, Image, Divider, Button } from "@neuralumina/lumina-ui";
 
 // Team members data
 const teamMembers = [
   {
-    name: "Chimuka Amel",
+    name: "Chimuka Mukwenya (AmelCMM)",
     role: "Creator & Lead Developer",
     bio: "Built LuminaUI from scratch — 15k LOC, zero dependencies, pure JavaScript.",
-    avatar: "https://ui-avatars.com/api/?name=Chimuka+Amel&background=0f8f67&color=fff&bold=true",
+    avatar: "https://ui-avatars.com/api/?name=AmelCMM&background=0f8f67&color=fff&bold=true",
   },
   {
     name: "Lumina Core",
@@ -72,7 +72,7 @@ export function About() {
           Button({
             text: "View on GitHub",
             variant: "primary",
-            onClick: () => window.open("https://github.com/chimuka-amel/lumina-ui", "_blank"),
+            onClick: () => window.open("https://github.com/AmelCMM/luminaUI", "_blank"),
             style: { marginTop: 8, width: "fit-content" },
           }),
         ]),
@@ -199,7 +199,7 @@ export function About() {
             Button({
               text: "GitHub",
               variant: "secondary",
-              onClick: () => window.open("https://github.com/chimuka-amel/lumina-ui", "_blank"),
+              onClick: () => window.open("https://github.com/AmelCMM/luminaUI", "_blank"),
               style: { backgroundColor: "transparent", borderColor: "white", color: "white" },
             }),
           ]),

@@ -1,4 +1,4 @@
-import { Column, Container, Text, Button, Row, Wrap } from "@chimuka_amel/lumina-ui";
+import { Column, Container, Text, Button, Row, Wrap } from "@neuralumina/lumina-ui";
 import { Card } from "../components/Card.js";
 
 const features = [

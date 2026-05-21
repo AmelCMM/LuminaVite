@@ -1,4 +1,4 @@
-import { Container, Row, Column, Text, Divider } from "@chimuka_amel/lumina-ui";
+import { Container, Row, Column, Text, Divider } from "@neuralumina/lumina-ui";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();

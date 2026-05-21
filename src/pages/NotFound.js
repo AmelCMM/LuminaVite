@@ -1,6 +1,6 @@
 // Add to your pages folder
 // src/pages/NotFound.js
-import { Column, Container, Text, Button } from "@chimuka_amel/lumina-ui";
+import { Column, Container, Text, Button } from "@neuralumina/lumina-ui";
 
 export function NotFound() {
   return Container({ className: "container fade-in" }, [

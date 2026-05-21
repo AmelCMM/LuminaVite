@@ -1,4 +1,4 @@
-import { Row, Container, Text, Button } from "@chimuka_amel/lumina-ui";
+import { Row, Container, Text, Button } from "@neuralumina/lumina-ui";
 import { getTheme, toggleTheme, getUser, logout } from "../store/appState.js";
 
 export function Header(forceUpdate) {

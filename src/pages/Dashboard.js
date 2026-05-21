@@ -1,4 +1,4 @@
-import { Column, Container, Text, Row, Card, Button, Divider } from "@chimuka_amel/lumina-ui";
+import { Column, Container, Text, Row, Card, Button, Divider } from "@neuralumina/lumina-ui";
 import { getUser } from "../store/appState.js";
 
 export function Dashboard(forceUpdate) {
