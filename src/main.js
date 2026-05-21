@@ -116,9 +116,9 @@ const widgetGroups = [
   },
 ];
 
-const installCode = `npm install @chimuka_amel/lumina-ui`;
+const installCode = `npm install @neuralumina/lumina-ui`;
 
-const quickStartCode = `import { mount, Column, Text, Button } from "@chimuka_amel/lumina-ui";
+const quickStartCode = `import { mount, Column, Text, Button } from "@neuralumina/lumina-ui";
 
 function App() {
   return Column({ gap: 12, padding: 16 }, [
@@ -132,7 +132,7 @@ function App() {
 
 mount(App, document.getElementById("app"));`;
 
-const stateCode = `import { mount, useState, Column, Row, Text, Button } from "@chimuka_amel/lumina-ui";
+const stateCode = `import { mount, useState, Column, Row, Text, Button } from "@neuralumina/lumina-ui";
 
 const [count, setCount, subscribeCount] = useState(0);
 const subscribed = new WeakSet();
@@ -175,10 +175,10 @@ const importCode = `import {
   Container,
   Text,
   Button,
-} from "@chimuka_amel/lumina-ui";
+} from "@neuralumina/lumina-ui";
 
-import { Column, Row } from "@chimuka_amel/lumina-ui/widgets/layout";
-import { Button } from "@chimuka_amel/lumina-ui/widgets/controls";`;
+import { Column, Row } from "@neuralumina/lumina-ui/widgets/layout";
+import { Button } from "@neuralumina/lumina-ui/widgets/controls";`;
 
 function bindState(forceUpdate) {
   if (subscribedUpdates.has(forceUpdate)) return;

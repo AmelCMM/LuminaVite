@@ -7,7 +7,7 @@ A starter template for building apps with LuminaUI and Vite. Hot reload, zero co
 ```bash
 npm create vite@latest my-app -- --template vanilla
 cd my-app
-npm install @chimuka_amel/lumina-ui
+npm install @neuralumina/lumina-ui
 npm run dev
 ```
 
@@ -56,7 +56,7 @@ No extra config files. Vite picks up LuminaUI's ES modules without any setup.
 ### `src/main.js`
 
 ```js
-import { mount, Column, Text, Button, useState } from "@chimuka_amel/lumina-ui";
+import { mount, Column, Text, Button, useState } from "@neuralumina/lumina-ui";
 
 const [count, setCount, subscribeCount] = useState(0);
 
@@ -94,7 +94,7 @@ import {
   Heading,
   Divider,
   useState,
-} from "@chimuka_amel/lumina-ui";
+} from "@neuralumina/lumina-ui";
 
 const [name, setName, subscribeName] = useState("");
 const [email, setEmail, subscribeEmail] = useState("");
@@ -154,7 +154,7 @@ mount(App, document.getElementById("app"));
 ## Todo app
 
 ```js
-import { mount, Column, Row, Text, Button, TextField, useState } from "@chimuka_amel/lumina-ui";
+import { mount, Column, Row, Text, Button, TextField, useState } from "@neuralumina/lumina-ui";
 
 const [todos, setTodos, subscribeTodos] = useState([]);
 const [input, setInput, subscribeInput] = useState("");
@@ -239,7 +239,7 @@ import {
 
   // State
   useState, createStore,
-} from "@chimuka_amel/lumina-ui";
+} from "@neuralumina/lumina-ui";
 ```
 
 ---
@@ -289,7 +289,7 @@ npm run deploy
     "preview": "vite preview"
   },
   "dependencies": {
-    "@chimuka_amel/lumina-ui": "latest"
+    "@neuralumina/lumina-ui": "latest"
   },
   "devDependencies": {
     "vite": "^5.0.0"
@@ -301,9 +301,9 @@ npm run deploy
 
 ## Troubleshooting
 
-**"Cannot find module '@chimuka_amel/lumina-ui'"**
+**"Cannot find module '@neuralumina/lumina-ui'"**
 ```bash
-npm install @chimuka_amel/lumina-ui
+npm install @neuralumina/lumina-ui
 ```
 
 **HMR not picking up changes**

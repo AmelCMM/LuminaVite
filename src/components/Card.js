@@ -1,4 +1,4 @@
-import { Card as LuminaCard, Column, Text } from "@chimuka_amel/lumina-ui";
+import { Card as LuminaCard, Column, Text } from "@neuralumina/lumina-ui";
 
 export function Card({ title, description, icon, onClick, featured = false }) {
   return LuminaCard({
