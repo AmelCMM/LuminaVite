@@ -12,6 +12,6 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
-    "@chimuka_amel/lumina-ui": "^0.1.0"
+    "@neuralumina/lumina-ui": "^0.1.1"
   }
 }

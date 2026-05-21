@@ -12,7 +12,7 @@ import {
   TextField,
   mount,
   useState,
-} from "@chimuka_amel/lumina-ui";
+} from "@neuralumina/lumina-ui";
 
 const [activeSection, setActiveSection, subscribeActiveSection] = useState("overview");
 const [searchTerm, setSearchTerm, subscribeSearchTerm] = useState("");

@@ -1,4 +1,4 @@
-import { useState } from "@chimuka_amel/lumina-ui";
+import { useState } from "@neuralumina/lumina-ui";
 
 // Global app state
 export const [getUser, setUser, subscribeUser] = useState(null);
