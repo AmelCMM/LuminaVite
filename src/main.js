@@ -331,8 +331,8 @@ function TopBar() {
         Text("LuminaUI Docs", { weight: 900, size: 18 }),
       ]),
       Row({ gap: 10, style: { alignItems: "center", flexWrap: "wrap" } }, [
-        LinkButton({ href: "https://www.npmjs.com/package/@chimuka_amel/lumina-ui", label: "npm", variant: "secondary" }),
-        LinkButton({ href: "https://github.com/AmelCMM/LuminaVite", label: "GitHub", variant: "primary" }),
+        LinkButton({ href: "https://www.npmjs.com/package/@neuralumina/lumina-ui", label: "npm", variant: "secondary" }),
+        LinkButton({ href: "https://github.com/AmelCMM/LuminaUI", label: "GitHub", variant: "primary" }),
       ]),
     ]),
   ]);
@@ -366,7 +366,7 @@ function InstallationSection() {
       CodeBlock(installCode, "bash"),
       Row({ gap: 12, style: { flexWrap: "wrap" } }, [
         LinkButton({ href: "https://vite.dev/guide/", label: "Vite guide", variant: "secondary" }),
-        LinkButton({ href: "https://www.npmjs.com/package/@chimuka_amel/lumina-ui", label: "Package page", variant: "secondary" }),
+        LinkButton({ href: "https://www.npmjs.com/package/@neuralumina/lumina-ui", label: "Package page", variant: "secondary" }),
       ]),
     ],
   });
@@ -448,7 +448,7 @@ function WidgetsSection() {
     id: "widgets",
     eyebrow: "API",
     title: "Widget reference.",
-    intro: "Search the current public widget families exported by @chimuka_amel/lumina-ui.",
+    intro: "Search the current public widget families exported by @neuralumina/lumina-ui.",
     children: [
       TextField({
         value: searchTerm(),
