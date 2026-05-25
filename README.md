@@ -1,74 +1,41 @@
-# LuminaUI + Vite
+# LuminaUI Documentation
 
-A starter template for building apps with LuminaUI and Vite. Hot reload, zero config, and the full widget library ready to go.
+Professional package documentation for `@neuralumina/lumina-ui`.
 
-## Quick start
+Current documented package version: `0.1.3`
+
+LuminaUI is a lightweight, Flutter-inspired UI package for building browser
+interfaces with plain JavaScript, ES modules, and real DOM output. This Vite
+site documents the npm package itself: installation, mental model, state,
+imports, deployment, and the complete public widget surface.
+
+## Install
 
 ```bash
-npm create vite@latest my-app -- --template vanilla
-cd my-app
-npm install @neuralumina/lumina-ui
-npm run dev
+npm install @neuralumina/lumina-ui@latest
 ```
 
-Open `http://localhost:5173`. That's it.
+For this project, the installed package resolves to:
 
----
-
-## Project structure
-
-```text
-my-app/
-├── index.html
-├── package.json
-└── src/
-    ├── main.js
-    └── style.css
+```json
+{
+  "dependencies": {
+    "@neuralumina/lumina-ui": "^0.1.3"
+  }
+}
 ```
 
-No extra config files. Vite picks up LuminaUI's ES modules without any setup.
-
----
-
-## Minimal setup
-
-### `index.html`
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LuminaUI + Vite</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: system-ui, -apple-system, Inter, sans-serif; background: #f5f7fa; }
-    </style>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
-```
-
-### `src/main.js`
+## Quick Start
 
 ```js
-import { mount, Column, Text, Button, useState } from "@neuralumina/lumina-ui";
+import { mount, Column, Text, Button } from "@neuralumina/lumina-ui";
 
-const [count, setCount, subscribeCount] = useState(0);
-
-function App(forceUpdate) {
-  subscribeCount(forceUpdate);
-
-  return Column({ gap: 16, style: { minHeight: "100vh", padding: "48px" } }, [
-    Text(`Count: ${count()}`, { size: 24, weight: 700 }),
+function App() {
+  return Column({ gap: 12, padding: 16 }, [
+    Text("Hello from LuminaUI", { as: "h1", size: 28, weight: 900 }),
     Button({
       text: "Click me",
-      onClick: () => setCount((c) => c + 1),
-      variant: "primary",
+      onClick: () => console.log("clicked"),
     }),
   ]);
 }
@@ -76,246 +43,159 @@ function App(forceUpdate) {
 mount(App, document.getElementById("app"));
 ```
 
----
+## State Model
 
-## A more complete example
+`useState` returns `[get, set, subscribe]`. Subscribe the renderer
+`forceUpdate` function once, then read state through getters during render.
 
-Forms, cards, and state — closer to a real app.
+```js
+import { mount, useState, Column, Row, Text, Button } from "@neuralumina/lumina-ui";
+
+const [count, setCount, subscribeCount] = useState(0);
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeCount(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  return Column({ gap: 12 }, [
+    Text(`Count: ${count()}`, { weight: 900 }),
+    Row({ gap: 8 }, [
+      Button({ text: "-", onClick: () => setCount((value) => value - 1) }),
+      Button({ text: "+", onClick: () => setCount((value) => value + 1) }),
+    ]),
+  ]);
+}
+
+mount(App, document.getElementById("app"));
+```
+
+## Import Paths
+
+Use the top-level package entry for most applications.
 
 ```js
 import {
   mount,
+  useState,
   Column,
-  Container,
+  Row,
   Text,
   Button,
-  Card,
-  TextField,
-  Heading,
-  Divider,
-  useState,
-} from "@neuralumina/lumina-ui";
-
-const [name, setName, subscribeName] = useState("");
-const [email, setEmail, subscribeEmail] = useState("");
-const [submitted, setSubmitted, subscribeSubmitted] = useState(false);
-const subscribed = new WeakSet();
-
-function bind(forceUpdate) {
-  if (subscribed.has(forceUpdate)) return;
-  subscribeName(forceUpdate);
-  subscribeEmail(forceUpdate);
-  subscribeSubmitted(forceUpdate);
-  subscribed.add(forceUpdate);
-}
-
-function App(forceUpdate) {
-  bind(forceUpdate);
-
-  if (submitted()) {
-    return Container({ style: { minHeight: "100vh" }, padding: 48 }, [
-      Card({ padding: 32, elevation: 2 }, [
-        Column({ gap: 16 }, [
-          Heading({ level: 2 }, "Welcome!"),
-          Text(`Name: ${name()}`, { weight: 500 }),
-          Text(`Email: ${email()}`, { weight: 500 }),
-          Divider(),
-          Button({
-            text: "Start over",
-            variant: "secondary",
-            onClick: () => { setName(""); setEmail(""); setSubmitted(false); },
-          }),
-        ]),
-      ]),
-    ]);
-  }
-
-  return Container({ style: { minHeight: "100vh" }, padding: 48 }, [
-    Card({ padding: 32, elevation: 2 }, [
-      Column({ gap: 24, style: { maxWidth: 480, margin: "0 auto" } }, [
-        Heading({ level: 1 }, "LuminaUI + Vite"),
-        Text("A UI framework with zero dependencies", { color: "#6b7280" }),
-        Divider(),
-        Column({ gap: 16 }, [
-          TextField({ placeholder: "Your name", value: name(), onChange: setName }),
-          TextField({ placeholder: "Your email", type: "email", value: email(), onChange: setEmail }),
-          Button({ text: "Submit", onClick: () => setSubmitted(true), variant: "primary" }),
-        ]),
-      ]),
-    ]),
-  ]);
-}
-
-mount(App, document.getElementById("app"));
-```
-
----
-
-## Todo app
-
-```js
-import { mount, Column, Row, Text, Button, TextField, useState } from "@neuralumina/lumina-ui";
-
-const [todos, setTodos, subscribeTodos] = useState([]);
-const [input, setInput, subscribeInput] = useState("");
-const subscribed = new WeakSet();
-
-function bind(forceUpdate) {
-  if (subscribed.has(forceUpdate)) return;
-  subscribeTodos(forceUpdate);
-  subscribeInput(forceUpdate);
-  subscribed.add(forceUpdate);
-}
-
-function App(forceUpdate) {
-  bind(forceUpdate);
-
-  const add = () => {
-    if (!input().trim()) return;
-    setTodos([...todos(), { id: Date.now(), text: input(), done: false }]);
-    setInput("");
-  };
-
-  const toggle = (id) =>
-    setTodos(todos().map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
-
-  return Column({ gap: 16, style: { padding: 48, maxWidth: 600, margin: "0 auto" } }, [
-    Text("Todos", { size: 32, weight: 900 }),
-    Row({ gap: 8 }, [
-      TextField({ placeholder: "Add a todo...", value: input(), onChange: setInput, style: { flex: 1 } }),
-      Button({ text: "Add", onClick: add, variant: "primary" }),
-    ]),
-    Column({ gap: 8 }, [
-      ...todos().map((todo) =>
-        Row({ key: todo.id, gap: 8, style: { alignItems: "center" } }, [
-          Button({ text: todo.done ? "✓" : "○", onClick: () => toggle(todo.id), variant: "text", style: { width: 40 } }),
-          Text(todo.text, {
-            style: todo.done ? { textDecoration: "line-through", color: "#9ca3af" } : {},
-          }),
-        ])
-      ),
-    ]),
-  ]);
-}
-
-mount(App, document.getElementById("app"));
-```
-
----
-
-## Available widgets
-
-```js
-import {
-  // Layout
-  Column, Row, Container, Center, Align, Padding, SizedBox,
-  Flexible, Expanded, Spacer, Wrap, Stack, Positioned,
-  Divider, Card, AspectRatio, Transform,
-
-  // Text
-  Text, Heading, Caption, RichText,
-
-  // Controls
-  Button, Input, TextField, Checkbox, Switch,
-
-  // Display
-  Icon, Image, CircleAvatar, Badge,
-
-  // Scrolling
-  ListView, GridView, SingleChildScrollView,
-
-  // Feedback
-  Dialog, AlertDialog, SnackBar, Tooltip,
-  LinearProgressIndicator, CircularProgressIndicator,
-
-  // Forms
-  Form, FormField, RadioGroup, Slider, Dropdown, TextArea,
-
-  // Navigation
-  Scaffold, AppBar, TabBar, TabBarView, BottomNavigationBar,
-
-  // Animation
-  AnimatedContainer, AnimatedOpacity, AnimatedScale,
-
-  // State
-  useState, createStore,
 } from "@neuralumina/lumina-ui";
 ```
 
----
+Subpath imports are also available when you want explicit module boundaries.
 
-## Building for production
+```js
+import { Column, Row } from "@neuralumina/lumina-ui/widgets/layout";
+import { Button } from "@neuralumina/lumina-ui/widgets/controls";
+import { createStore } from "@neuralumina/lumina-ui/core/state";
+```
+
+## Core Exports
+
+- `mount`
+- `useState`
+- `useEffect`
+- `createStore`
+- `createElement`
+- `Fragment`
+- `applyStyles`
+- `addClasses`
+- `luminaTheme`
+
+## Full Widget Inventory
+
+The package currently documents 95 public widgets.
+
+### Layout
+
+`Column`, `Row`, `Container`, `Center`, `Align`, `Expanded`, `Flexible`,
+`Padding`, `SizedBox`, `Spacer`, `Wrap`, `Stack`, `Positioned`, `Divider`,
+`Card`, `AspectRatio`, `Baseline`, `ConstrainedBox`, `DecoratedBox`,
+`FractionallySizedBox`, `LayoutBuilder`, `LimitedBox`, `Offstage`,
+`OverflowBox`, `RotatedBox`, `SizedOverflowBox`, `Transform`
+
+### Controls
+
+`Button`, `Input`, `TextField`, `Checkbox`, `Switch`
+
+### Display
+
+`Badge`, `CircleAvatar`, `ClipRRect`, `Icon`, `Image`, `Placeholder`,
+`ClipOval`, `ClipPath`, `ClipRect`, `FittedBox`, `Opacity`, `PhysicalModel`,
+`ShaderMask`
+
+### Scrolling
+
+`CustomScrollView`, `GridView`, `ListView`, `NestedScrollView`, `PageView`,
+`SingleChildScrollView`, `SliverAppBar`, `SliverGrid`, `SliverList`,
+`SliverPadding`, `SliverToBoxAdapter`
+
+### Feedback
+
+`AlertDialog`, `CircularProgressIndicator`, `Dialog`,
+`LinearProgressIndicator`, `ModalBarrier`, `SnackBar`, `Tooltip`
+
+### Forms
+
+`Dropdown`, `Form`, `FormField`, `Radio`, `RadioGroup`, `Slider`, `TextArea`
+
+### Navigation
+
+`AppBar`, `BottomNavigationBar`, `Drawer`, `NavigationRail`, `Scaffold`,
+`TabBar`, `TabBarView`
+
+### Animation
+
+`AnimatedContainer`, `AnimatedOpacity`, `AnimatedScale`, `AnimatedSlide`,
+`AnimatedSwitcher`
+
+### Text
+
+`Text`, `Heading`, `Caption`, `DefaultTextStyle`, `RichText`
+
+### Accessibility
+
+`Semantics`, `ExcludeSemantics`
+
+### Interaction
+
+`AbsorbPointer`, `Dismissible`, `Draggable`, `DragTarget`, `GestureDetector`,
+`IgnorePointer`
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Production Build
 
 ```bash
 npm run build
-```
-
-Output goes to `dist/`. Deploy it anywhere that serves static files — Vercel, Netlify, Cloudflare Pages, GitHub Pages, an S3 bucket.
-
-```bash
-# Preview the production build locally
 npm run preview
 ```
 
-### GitHub Pages
+Vite writes static production output to `dist/`. The generated files can be
+deployed to any static host.
 
-```json
-{
-  "scripts": {
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
-  }
-}
-```
+## Documentation Features
 
-```bash
-npm install --save-dev gh-pages
-npm run deploy
-```
-
----
-
-## package.json
-
-```json
-{
-  "name": "my-lumina-app",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@neuralumina/lumina-ui": "latest"
-  },
-  "devDependencies": {
-    "vite": "^5.0.0"
-  }
-}
-```
-
----
-
-## Troubleshooting
-
-**"Cannot find module '@neuralumina/lumina-ui'"**
-```bash
-npm install @neuralumina/lumina-ui
-```
-
-**HMR not picking up changes**
-
-State updates trigger `forceUpdate()` so HMR works out of the box. If something feels off, just restart the dev server.
-
-**Build output too large?**
-
-LuminaUI is around 150 KB. Vite minifies and treeshakes automatically. Run `npm run build -- --report` to inspect the bundle.
-
----
+- Reads the package version from `@neuralumina/lumina-ui/package.json`.
+- Documents every public widget exported by the current package.
+- Lists nested navigation subitems for sections, widget groups, and individual widgets.
+- Provides syntax-highlighted JavaScript, Bash, and JSON snippets in the app.
+- Uses responsive grids, a small-device navigation drawer, and horizontally
+  scrollable code blocks for smaller screens.
 
 ## License
 
-MIT
+The documented package is licensed as `Apache-2.0`.

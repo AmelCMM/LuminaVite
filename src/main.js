@@ -1,4 +1,5 @@
 import "./style.css";
+import packageInfo from "@neuralumina/lumina-ui/package.json";
 import {
   Button,
   Card,
@@ -14,12 +15,20 @@ import {
   useState,
 } from "@neuralumina/lumina-ui";
 
-const [activeSection, setActiveSection, subscribeActiveSection] = useState("overview");
+const [activeSection, setActiveSection, subscribeActiveSection] =
+  useState("overview");
+const [activeTarget, setActiveTarget, subscribeActiveTarget] =
+  useState("overview");
+const [drawerOpen, setDrawerOpen, subscribeDrawerOpen] = useState(false);
 const [searchTerm, setSearchTerm, subscribeSearchTerm] = useState("");
 const [toast, setToast, subscribeToast] = useState(null);
 const subscribedUpdates = new WeakSet();
 
-const navItems = [
+const packageName = packageInfo.name;
+const packageVersion = packageInfo.version;
+const packageLicense = packageInfo.license || "Open source";
+
+const baseNavItems = [
   { id: "overview", label: "Overview" },
   { id: "installation", label: "Installation" },
   { id: "quick-start", label: "Quick Start" },
@@ -33,96 +42,429 @@ const navItems = [
 
 const highlights = [
   {
-    title: "Plain JavaScript",
-    body: "Build interfaces as function calls that return small virtual node objects. No JSX transform required.",
+    title: "Widget-tree JavaScript",
+    body: "Compose interfaces with functions that return small virtual node objects. No JSX transform is required.",
   },
   {
-    title: "Flutter-inspired layout",
-    body: "Compose Row, Column, Container, Padding, Stack, and Card widgets with predictable props.",
+    title: "Browser DOM renderer",
+    body: "mount() renders real DOM nodes and patches updates from the latest widget tree.",
   },
   {
-    title: "Tiny state primitive",
-    body: "useState returns explicit getter, setter, and subscriber functions that work with mount().",
+    title: "Explicit state",
+    body: "useState returns a getter, setter, and subscriber so state updates stay visible and predictable.",
   },
   {
-    title: "Real DOM output",
-    body: "LuminaUI renders browser DOM nodes directly and patches updates from the widget tree.",
+    title: "Package-first API",
+    body: "The top-level module exports core utilities, theme helpers, and every public widget family.",
   },
 ];
+
+function w(name, description, props) {
+  return { name, description, props };
+}
 
 const widgetGroups = [
   {
-    group: "Layout",
-    imports: "Column, Row, Container, Center, Align, Padding, SizedBox, Wrap, Stack, Card, Divider",
+    id: "layout",
+    title: "Layout",
+    importPath: "@neuralumina/lumina-ui/widgets/layout",
+    summary:
+      "Structure responsive screens with flex, box, constraint, stack, and transform primitives.",
+    example: `import { Column, Row, Card, Text, Button } from "@neuralumina/lumina-ui";
+
+Column({ gap: 16, padding: 24 }, [
+  Row({ mainAxisAlignment: "spaceBetween", gap: 12 }, [
+    Text("Release dashboard", { weight: 900, size: 20 }),
+    Button({ text: "Ship" }),
+  ]),
+  Card({ padding: 16, elevation: 2 }, [
+    Text("Layout widgets are plain JavaScript calls."),
+  ]),
+]);`,
     widgets: [
-      ["Column", "Vertical flex layout with gap, padding, and alignment props."],
-      ["Row", "Horizontal flex layout for toolbars, action groups, and inline content."],
-      ["Container", "General box for sizing, spacing, color, decoration, and alignment."],
-      ["Card", "Raised surface built on Container with padding, border, radius, and shadow."],
-      ["Stack", "Relative layer container for Positioned children."],
-      ["Divider", "Horizontal or vertical separator."],
+      w("Column", "Vertical flex container for stacked UI.", "gap, padding, mainAxisAlignment, crossAxisAlignment"),
+      w("Row", "Horizontal flex container for toolbars and inline content.", "gap, padding, mainAxisAlignment, crossAxisAlignment"),
+      w("Container", "General-purpose box for sizing, spacing, decoration, and alignment.", "width, height, padding, margin, color, decoration"),
+      w("Center", "Centers child content in both axes.", "width, height, style"),
+      w("Align", "Aligns children within a flexible box.", "alignment, widthFactor, heightFactor"),
+      w("Expanded", "Takes remaining flex space with tight fit.", "flex, style"),
+      w("Flexible", "Controls how a child participates in a Row or Column.", "flex, fit"),
+      w("Padding", "Applies edge insets around children.", "padding"),
+      w("SizedBox", "Creates fixed or flexible empty space and size wrappers.", "width, height"),
+      w("Spacer", "Consumes remaining flex space between siblings.", "flex"),
+      w("Wrap", "Wraps children across lines when space runs out.", "gap, spacing, direction, alignment"),
+      w("Stack", "Positions layered children relative to a parent.", "width, height, clip"),
+      w("Positioned", "Places a child absolutely inside Stack.", "top, right, bottom, left, width, height"),
+      w("Divider", "Horizontal or vertical visual separator.", "direction, thickness, color, margin"),
+      w("Card", "Raised surface with border, radius, padding, and elevation.", "padding, radius, elevation, decoration"),
+      w("AspectRatio", "Maintains a width-to-height ratio.", "aspectRatio, ratio, width"),
+      w("Baseline", "Aligns inline content to a baseline.", "baseline, baselineType"),
+      w("ConstrainedBox", "Applies min and max size constraints.", "constraints, minWidth, maxWidth, minHeight, maxHeight"),
+      w("DecoratedBox", "Applies a decoration object to a box.", "decoration"),
+      w("FractionallySizedBox", "Sizes itself by a fraction of available space.", "widthFactor, heightFactor, alignment"),
+      w("LayoutBuilder", "Builds children from supplied constraints.", "builder, constraints, child"),
+      w("LimitedBox", "Caps maximum width or height.", "maxWidth, maxHeight"),
+      w("Offstage", "Keeps children in the tree while hiding them visually.", "offstage"),
+      w("OverflowBox", "Allows child content to overflow its bounds.", "minWidth, maxWidth, minHeight, maxHeight"),
+      w("RotatedBox", "Rotates content in quarter turns.", "quarterTurns"),
+      w("SizedOverflowBox", "Combines fixed sizing with visible overflow.", "size, width, height"),
+      w("Transform", "Applies CSS translate, rotate, scale, skew, or custom transform.", "translate, rotate, scale, skew, transform, origin"),
     ],
   },
   {
-    group: "Controls",
-    imports: "Button, Input, TextField, Checkbox, Switch",
+    id: "controls",
+    title: "Controls",
+    importPath: "@neuralumina/lumina-ui/widgets/controls",
+    summary:
+      "Collect intent with accessible buttons, text input primitives, checkboxes, and switches.",
+    example: `import { Row, Button, TextField, Switch } from "@neuralumina/lumina-ui";
+
+Row({ gap: 12, style: { flexWrap: "wrap" } }, [
+  TextField({ placeholder: "Project name", onChange: setName }),
+  Switch({ value: enabled(), onChange: setEnabled, ariaLabel: "Enable sync" }),
+  Button({ text: "Save", onClick: saveProject }),
+]);`,
     widgets: [
-      ["Button", "Primary, secondary, text, and danger actions."],
-      ["TextField", "Single-line input with LuminaUI field styling."],
-      ["Checkbox", "Boolean selection with label and change callback."],
-      ["Switch", "Accessible switch button for binary settings."],
+      w("Button", "Styled action button with primary, secondary, text, and danger variants.", "text, onClick, variant, disabled, type"),
+      w("Input", "Base input control for text, checkbox, and other native input types.", "value, onChange, onInput, placeholder, type"),
+      w("TextField", "Convenience wrapper around Input for text entry.", "value, onChange, placeholder, type"),
+      w("Checkbox", "Labelled boolean input.", "checked, onChange, label, disabled"),
+      w("Switch", "Accessible on/off toggle button.", "value, onChange, ariaLabel, disabled"),
     ],
   },
   {
-    group: "Forms",
-    imports: "Form, FormField, Dropdown, Radio, RadioGroup, Slider, TextArea",
+    id: "display",
+    title: "Display",
+    importPath: "@neuralumina/lumina-ui/widgets/display",
+    summary:
+      "Present media, status, clipping, fitting, opacity, elevation, and lightweight icon content.",
+    example: `import { Row, CircleAvatar, Badge, Icon, Text } from "@neuralumina/lumina-ui";
+
+Row({ gap: 12 }, [
+  Badge({ label: 3 }, [
+    CircleAvatar({ initials: "NL", size: 44 }),
+  ]),
+  Icon("info", { label: "Info", color: "#0f8f67" }),
+  Text("Display widgets shape visual content."),
+]);`,
     widgets: [
-      ["Form", "Submit-safe form wrapper with configurable gap."],
-      ["FormField", "Label, required marker, helper text, and error text wrapper."],
-      ["Dropdown", "Select control with options and placeholder support."],
-      ["Slider", "Range input that returns numeric values."],
-      ["TextArea", "Multi-line field with LuminaUI focus behavior."],
+      w("Badge", "Places a count or status marker over child content.", "label, color, textColor, alignment"),
+      w("CircleAvatar", "Circular avatar from an image, initials, or children.", "src, alt, initials, size"),
+      w("ClipRRect", "Clips children with rounded rectangular bounds.", "radius"),
+      w("Icon", "Small text-backed icon primitive.", "name, label, size, color"),
+      w("Image", "Responsive image element with fit, radius, size, and alt text.", "src, alt, width, height, fit, radius"),
+      w("Placeholder", "Dashed placeholder area for empty media states.", "width, height, color, label"),
+      w("ClipOval", "Clips children into an oval or circle.", "style"),
+      w("ClipPath", "Clips children with a CSS clip-path value.", "path, clipPath"),
+      w("ClipRect", "Clips overflowing child content to a rectangle.", "style"),
+      w("FittedBox", "Fits child media within a bounded area.", "fit, width, height, alignment"),
+      w("Opacity", "Applies opacity to a subtree.", "opacity"),
+      w("PhysicalModel", "Creates a material-like surface with elevation and shadow.", "elevation, color, shadowColor, borderRadius"),
+      w("ShaderMask", "Applies background shader effects, including text masks.", "shader, blendMode"),
     ],
   },
   {
-    group: "Display",
-    imports: "Text, Heading, Caption, Image, Icon, Badge, CircleAvatar, Placeholder",
+    id: "scrolling",
+    title: "Scrolling",
+    importPath: "@neuralumina/lumina-ui/widgets/scrolling",
+    summary:
+      "Build list, grid, page, nested, and sliver-like scrolling layouts with data builders.",
+    example: `import { GridView, Card, Text } from "@neuralumina/lumina-ui";
+
+GridView({
+  items: products,
+  minColumnWidth: 180,
+  gap: 12,
+  itemBuilder: (product) =>
+    Card({ key: product.id }, [Text(product.name, { weight: 800 })]),
+});`,
     widgets: [
-      ["Text", "Typography primitive with size, weight, color, alignment, and semantic tag props."],
-      ["Image", "Responsive image widget with fit, radius, width, height, and alt props."],
-      ["Badge", "Overlay count or status marker around child content."],
-      ["CircleAvatar", "Circular image or initials avatar."],
+      w("CustomScrollView", "Scrollable container for sliver-like child sections.", "slivers, direction, padding, smooth"),
+      w("GridView", "Responsive grid built from children or itemBuilder.", "items, itemBuilder, columns, minColumnWidth, gap"),
+      w("ListView", "Vertical or horizontal list built from children or items.", "items, itemBuilder, separatorBuilder, direction, gap"),
+      w("NestedScrollView", "Scrollable layout with separate header and body slots.", "header, body"),
+      w("PageView", "Snap-scrolling page container.", "pages, direction, gap"),
+      w("SingleChildScrollView", "Scrollable wrapper for a single child tree.", "scrollDirection, direction, padding, maxHeight"),
+      w("SliverAppBar", "Sticky or floating header for custom scroll layouts.", "title, expandedHeight, floating, pinned"),
+      w("SliverGrid", "GridView alias for sliver-style composition.", "items, itemBuilder, columns, gap"),
+      w("SliverList", "ListView alias for sliver-style composition.", "items, itemBuilder, separatorBuilder"),
+      w("SliverPadding", "Padding wrapper for sliver-style children.", "padding"),
+      w("SliverToBoxAdapter", "Adapts a normal box into a sliver-style child.", "children, style"),
     ],
   },
   {
-    group: "Feedback",
-    imports: "SnackBar, Dialog, AlertDialog, Tooltip, LinearProgressIndicator, CircularProgressIndicator",
+    id: "feedback",
+    title: "Feedback",
+    importPath: "@neuralumina/lumina-ui/widgets/feedback",
+    summary:
+      "Communicate status, blocking decisions, and progress with dialogs, snackbars, and indicators.",
+    example: `import { SnackBar, Button } from "@neuralumina/lumina-ui";
+
+SnackBar({
+  open: saved(),
+  message: "Changes saved",
+  action: Button({ text: "Undo", variant: "text", onClick: undo }),
+});`,
     widgets: [
-      ["SnackBar", "Fixed status message with optional action."],
-      ["Dialog", "Modal shell with barrier, width, and dismiss behavior."],
-      ["Tooltip", "Title-backed tooltip wrapper."],
-      ["LinearProgressIndicator", "Determinate or indeterminate progress bar."],
+      w("AlertDialog", "Preset modal dialog with title, content, and actions.", "open, title, content, actions, onDismiss"),
+      w("CircularProgressIndicator", "Circular loading indicator.", "size, strokeWidth, color, trackColor"),
+      w("Dialog", "Modal shell with overlay, dismiss behavior, and width control.", "open, dismissible, onDismiss, width, barrierColor"),
+      w("LinearProgressIndicator", "Determinate or indeterminate progress bar.", "value, color, trackColor, height"),
+      w("ModalBarrier", "Dismissible or static overlay layer.", "color, dismissible, onDismiss, zIndex"),
+      w("SnackBar", "Fixed status message with optional action.", "open, message, action, position"),
+      w("Tooltip", "Native title-backed tooltip wrapper.", "message"),
     ],
   },
   {
-    group: "Navigation",
-    imports: "AppBar, BottomNavigationBar, Drawer, NavigationRail, Scaffold, TabBar, TabBarView",
+    id: "forms",
+    title: "Forms",
+    importPath: "@neuralumina/lumina-ui/widgets/forms",
+    summary:
+      "Compose validated form flows from labels, radios, sliders, selects, and text areas.",
+    example: `import { Form, FormField, TextArea, Dropdown, Button } from "@neuralumina/lumina-ui";
+
+Form({ onSubmit: submitProfile, gap: 16 }, [
+  FormField({ label: "Bio", helperText: "Keep it short." }, [
+    TextArea({ value: bio(), onChange: setBio }),
+  ]),
+  Dropdown({ value: role(), onChange: setRole, options: roleOptions }),
+  Button({ text: "Create profile", type: "submit" }),
+]);`,
     widgets: [
-      ["Scaffold", "Application shell with app bar, body, drawer, and bottom navigation slots."],
-      ["AppBar", "Header bar with title, leading content, and actions."],
-      ["TabBar", "Accessible tab list with controlled value."],
-      ["NavigationRail", "Side navigation for app-like layouts."],
+      w("Dropdown", "Select menu with options and placeholder support.", "value, options, onChange, placeholder, disabled"),
+      w("Form", "Submit-safe form wrapper with vertical layout.", "onSubmit, gap, noValidate"),
+      w("FormField", "Label, required marker, helper text, and error text wrapper.", "label, helperText, errorText, required"),
+      w("Radio", "Single radio option for custom groups.", "value, groupValue, onChange, label, name"),
+      w("RadioGroup", "Managed group of Radio options.", "options, value, onChange, name, direction, gap"),
+      w("Slider", "Native range input returning numeric values.", "value, min, max, step, onChange"),
+      w("TextArea", "Multi-line text entry with LuminaUI field styling.", "value, onChange, rows, placeholder"),
+    ],
+  },
+  {
+    id: "navigation",
+    title: "Navigation",
+    importPath: "@neuralumina/lumina-ui/widgets/navigation",
+    summary:
+      "Create app shells, top bars, drawers, rails, tab sets, and bottom navigation.",
+    example: `import { Scaffold, AppBar, Column, TabBar, TabBarView } from "@neuralumina/lumina-ui";
+
+Scaffold({
+  appBar: AppBar({ title: "LuminaUI" }),
+  body: Column([
+    TabBar({ tabs, value: activeTab(), onChange: setActiveTab }),
+    TabBarView({ tabs, value: activeTab() }),
+  ]),
+});`,
+    widgets: [
+      w("AppBar", "Header bar with title, leading content, and actions.", "title, leading, actions, height"),
+      w("BottomNavigationBar", "Mobile-style bottom navigation grid.", "items, value, onChange, color"),
+      w("Drawer", "Fixed side drawer for app navigation.", "open, width, zIndex"),
+      w("NavigationRail", "Vertical side navigation for desktop app shells.", "items, value, onChange, width"),
+      w("Scaffold", "Application layout shell with appBar, body, drawer, and bottomNavigationBar.", "appBar, body, drawer, bottomNavigationBar, bodyStyle"),
+      w("TabBar", "Controlled tab list.", "tabs, value, onChange, color"),
+      w("TabBarView", "Renders the active tab child.", "tabs, value"),
+    ],
+  },
+  {
+    id: "animation",
+    title: "Animation",
+    importPath: "@neuralumina/lumina-ui/widgets/animation",
+    summary:
+      "Add CSS-transition driven motion for container, opacity, scale, slide, and switcher states.",
+    example: `import { AnimatedOpacity, AnimatedScale, Text } from "@neuralumina/lumina-ui";
+
+AnimatedScale({ scale: selected() ? 1.04 : 1, duration: 180 }, [
+  AnimatedOpacity({ opacity: selected() ? 1 : 0.64 }, [
+    Text("Animated widgets use CSS transitions."),
+  ]),
+]);`,
+    widgets: [
+      w("AnimatedContainer", "Animates size and style changes.", "duration, curve, transition, width, height"),
+      w("AnimatedOpacity", "Animates opacity changes.", "opacity, duration, curve"),
+      w("AnimatedScale", "Animates CSS scale changes.", "scale, duration, curve, origin"),
+      w("AnimatedSlide", "Animates translate offsets.", "offset, duration, curve"),
+      w("AnimatedSwitcher", "Transition wrapper for replacing a child.", "child, duration, curve"),
+    ],
+  },
+  {
+    id: "text",
+    title: "Text",
+    importPath: "@neuralumina/lumina-ui/widgets/text",
+    summary:
+      "Render semantic headings, body text, captions, inherited text styling, and rich spans.",
+    example: `import { Heading, Text, Caption, RichText } from "@neuralumina/lumina-ui";
+
+Column({ gap: 8 }, [
+  Heading({ level: 2 }, "Documentation"),
+  Text("Readable defaults with semantic escape hatches."),
+  Caption({}, "Versioned API reference"),
+  RichText({ spans: [{ text: "Rich", style: { fontWeight: 900 } }, { text: " text" }] }),
+]);`,
+    widgets: [
+      w("Text", "Typography primitive with semantic tag support.", "content, size, weight, align, color, lineHeight, maxLines, as"),
+      w("Heading", "Heading helper for h1 through h6 sizing.", "level, children"),
+      w("Caption", "Small muted text helper.", "children, color, size"),
+      w("DefaultTextStyle", "Applies inherited text styles to a subtree.", "size, weight, color, align, lineHeight"),
+      w("RichText", "Renders styled spans inside one text container.", "spans, as, style"),
+    ],
+  },
+  {
+    id: "accessibility",
+    title: "Accessibility",
+    importPath: "@neuralumina/lumina-ui/widgets/accessibility",
+    summary:
+      "Attach semantic roles, labels, descriptions, live regions, and hidden semantics intentionally.",
+    example: `import { Semantics, ExcludeSemantics, Text } from "@neuralumina/lumina-ui";
+
+Semantics({ role: "status", label: "Sync state", liveRegion: true }, [
+  Text("All changes synced"),
+  ExcludeSemantics([Text("Decorative timestamp")]),
+]);`,
+    widgets: [
+      w("Semantics", "Adds role, label, description, hidden, and live region attributes.", "as, role, label, hint, hidden, liveRegion"),
+      w("ExcludeSemantics", "Hides decorative children from assistive technology.", "children, style"),
+    ],
+  },
+  {
+    id: "interaction",
+    title: "Interaction",
+    importPath: "@neuralumina/lumina-ui/widgets/interaction",
+    summary:
+      "Handle gestures, drag and drop, pointer blocking, and dismissible UI regions.",
+    example: `import { GestureDetector, Dismissible, Card, Text } from "@neuralumina/lumina-ui";
+
+Dismissible({ onDismissed: archiveCard }, [
+  GestureDetector({ onTap: openCard, onLongPress: pinCard }, [
+    Card([Text("Tap, long press, or dismiss")]),
+  ]),
+]);`,
+    widgets: [
+      w("AbsorbPointer", "Blocks pointer events while optionally dimming children.", "absorbing, cursor, dim"),
+      w("Dismissible", "Detects swipe or keyboard dismissal gestures.", "direction, onDismissed, threshold, radius"),
+      w("Draggable", "Makes children draggable with optional transfer data.", "data, onDragStarted, onDragCompleted, width, height"),
+      w("DragTarget", "Receives dragged data and controls acceptable drops.", "onAccept, onWillAccept, radius"),
+      w("GestureDetector", "Maps click, double click, long press, and pointer pan events.", "onTap, onDoubleTap, onLongPress, onPanStart, onPanUpdate, onPanEnd"),
+      w("IgnorePointer", "Lets pointer events pass through a subtree.", "ignoring"),
     ],
   },
 ];
 
-const installCode = `npm install @neuralumina/lumina-ui`;
+const coreApis = [
+  w("mount", "Mounts a component function or widget tree into a DOM container.", "componentFn, container"),
+  w("useState", "Alias of createState that returns [get, set, subscribe].", "initialValue"),
+  w("useEffect", "Creates an effect runner that can compare dependencies.", "effect, deps"),
+  w("createStore", "Tiny reducer store with getState, dispatch, and subscribe.", "reducer, initialState"),
+  w("createElement", "Low-level DOM element factory used by the renderer.", "tag, props"),
+  w("Fragment", "Creates a document fragment from children.", "children"),
+  w("applyStyles", "Applies a style object to an existing DOM element.", "element, styles"),
+  w("addClasses", "Adds one or more class names to an existing DOM element.", "element, ...classes"),
+  w("luminaTheme", "Shared colors, radius, shadow, and transition tokens.", "colors, radius, shadow, transition"),
+];
+
+const totalWidgets = widgetGroups.reduce(
+  (sum, group) => sum + group.widgets.length,
+  0,
+);
+
+function slugify(value) {
+  return String(value)
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function groupAnchor(group) {
+  return `widget-group-${group.id}`;
+}
+
+function widgetAnchor(group, widget) {
+  return `widget-${group.id}-${slugify(widget.name)}`;
+}
+
+function apiAnchor(api) {
+  return `api-${slugify(api.name)}`;
+}
+
+function widgetNavChildren(group) {
+  return group.widgets.map((widget) => ({
+    id: widgetAnchor(group, widget),
+    label: widget.name,
+    sectionId: "widgets",
+  }));
+}
+
+const navItems = baseNavItems.map((item) => {
+  const children = {
+    overview: [
+      { id: "overview", label: `Package v${packageVersion}` },
+      { id: "widgets", label: `${totalWidgets} widgets`, sectionId: "widgets" },
+      { id: "state", label: "Core APIs", sectionId: "state" },
+    ],
+    installation: [
+      { id: "installation", label: "npm install" },
+      { id: "imports", label: "Package imports", sectionId: "imports" },
+      { id: "deployment", label: "Vite build", sectionId: "deployment" },
+    ],
+    "quick-start": [
+      { id: "quick-start", label: "mount" },
+      { id: "widget-layout-column", label: "Column widget", sectionId: "widgets" },
+      { id: "widget-controls-button", label: "Button widget", sectionId: "widgets" },
+    ],
+    "mental-model": [
+      { id: "mental-model", label: "Widget tree" },
+      { id: "widget-text-text", label: "Text widget", sectionId: "widgets" },
+      { id: "widget-layout-padding", label: "Padding widget", sectionId: "widgets" },
+      { id: "widget-layout-container", label: "Container widget", sectionId: "widgets" },
+    ],
+    state: coreApis.map((api) => ({
+      id: apiAnchor(api),
+      label: api.name,
+      sectionId: "state",
+    })),
+    widgets: widgetGroups.map((group) => ({
+      id: groupAnchor(group),
+      label: group.title,
+      sectionId: "widgets",
+      children: widgetNavChildren(group),
+    })),
+    imports: widgetGroups.map((group) => ({
+      id: groupAnchor(group),
+      label: `${group.title} widgets`,
+      sectionId: "widgets",
+    })),
+    examples: [
+      { id: "widget-layout-card", label: "Card widget", sectionId: "widgets" },
+      { id: "widget-feedback-linear-progress-indicator", label: "LinearProgressIndicator", sectionId: "widgets" },
+      { id: "widget-controls-button", label: "Button widget", sectionId: "widgets" },
+    ],
+    deployment: [
+      { id: "deployment", label: "npm run build" },
+      { id: "deployment", label: "npm run preview" },
+      { id: "deployment", label: "Static output" },
+    ],
+  }[item.id];
+
+  return { ...item, children };
+});
+
+const installCode = `npm install @neuralumina/lumina-ui@latest`;
+
+const packageCode = `{
+  "dependencies": {
+    "@neuralumina/lumina-ui": "^${packageVersion}"
+  },
+  "devDependencies": {
+    "vite": "^8.0.10"
+  }
+}`;
 
 const quickStartCode = `import { mount, Column, Text, Button } from "@neuralumina/lumina-ui";
 
 function App() {
   return Column({ gap: 12, padding: 16 }, [
-    Text("Hello from LuminaUI", { size: 24, weight: 800 }),
+    Text("Hello from LuminaUI", { as: "h1", size: 28, weight: 900 }),
     Button({
       text: "Click me",
       onClick: () => console.log("clicked"),
@@ -147,7 +489,7 @@ function App(forceUpdate) {
   bindState(forceUpdate);
 
   return Column({ gap: 12 }, [
-    Text(\`Count: \${count()}\`, { weight: 800 }),
+    Text(\`Count: \${count()}\`, { weight: 900 }),
     Row({ gap: 8 }, [
       Button({ text: "-", onClick: () => setCount((value) => value - 1) }),
       Button({ text: "+", onClick: () => setCount((value) => value + 1) }),
@@ -156,16 +498,6 @@ function App(forceUpdate) {
 }
 
 mount(App, document.getElementById("app"));`;
-
-const layoutCode = `Column({ gap: 16 }, [
-  Row({ gap: 8, mainAxisAlignment: "spaceBetween" }, [
-    Text("Project", { weight: 800 }),
-    Button({ text: "Deploy" }),
-  ]),
-  Card({ padding: 16, elevation: 2 }, [
-    Text("Everything here is a LuminaUI widget."),
-  ]),
-]);`;
 
 const importCode = `import {
   mount,
@@ -178,11 +510,72 @@ const importCode = `import {
 } from "@neuralumina/lumina-ui";
 
 import { Column, Row } from "@neuralumina/lumina-ui/widgets/layout";
-import { Button } from "@neuralumina/lumina-ui/widgets/controls";`;
+import { Button } from "@neuralumina/lumina-ui/widgets/controls";
+import { createStore } from "@neuralumina/lumina-ui/core/state";`;
+
+const compositionCode = `import {
+  Card,
+  Column,
+  Row,
+  Text,
+  Button,
+  LinearProgressIndicator,
+} from "@neuralumina/lumina-ui";
+
+Card({ padding: 18, elevation: 2 }, [
+  Column({ gap: 14 }, [
+    Row({ mainAxisAlignment: "spaceBetween", gap: 12 }, [
+      Text("Release health", { weight: 900, size: 18 }),
+      Button({ text: "View logs", variant: "secondary" }),
+    ]),
+    LinearProgressIndicator({ value: 0.72 }),
+    Text("72% complete", { color: "#4b5563" }),
+  ]),
+]);`;
+
+const buildCode = `npm run build
+npm run preview`;
+
+const jsKeywords = new Set([
+  "as",
+  "async",
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "default",
+  "else",
+  "export",
+  "false",
+  "finally",
+  "for",
+  "from",
+  "function",
+  "if",
+  "import",
+  "in",
+  "let",
+  "new",
+  "null",
+  "return",
+  "switch",
+  "true",
+  "try",
+  "typeof",
+  "undefined",
+  "var",
+]);
+
+const shellWords = new Set(["cd", "cp", "git", "mkdir", "npm", "npx", "pnpm", "yarn"]);
 
 function bindState(forceUpdate) {
   if (subscribedUpdates.has(forceUpdate)) return;
   subscribeActiveSection(forceUpdate);
+  subscribeActiveTarget(forceUpdate);
+  subscribeDrawerOpen(forceUpdate);
   subscribeSearchTerm(forceUpdate);
   subscribeToast(forceUpdate);
   subscribedUpdates.add(forceUpdate);
@@ -196,9 +589,14 @@ function notify(message) {
   }, 2800);
 }
 
-function goToSection(id) {
-  setActiveSection(id);
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function goToSection(id, sectionId = id) {
+  setActiveSection(sectionId);
+  setActiveTarget(id);
+  setDrawerOpen(false);
+  document.getElementById(id)?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
 }
 
 function copyCode(code) {
@@ -216,45 +614,203 @@ function RawElement(tag, props = {}, children = []) {
 }
 
 function LinkButton({ href, label, variant = "primary" }) {
-  return RawElement("a", {
-    href,
-    target: "_blank",
-    rel: "noreferrer",
-    className: `doc-button doc-button-${variant}`,
-  }, [label]);
+  return RawElement(
+    "a",
+    {
+      href,
+      target: "_blank",
+      rel: "noreferrer",
+      className: `doc-button doc-button-${variant}`,
+    },
+    [label],
+  );
 }
 
-function Pill(label, tone = "blue") {
-  return RawElement("span", { className: `doc-pill doc-pill-${tone}` }, [label]);
+function Pill(label, tone = "teal") {
+  return RawElement("span", { className: `doc-pill doc-pill-${tone}` }, [
+    label,
+  ]);
+}
+
+function wordTokenType(word, language) {
+  if (language === "bash") return shellWords.has(word) ? "keyword" : "plain";
+  if (language === "json") return "plain";
+  return jsKeywords.has(word) ? "keyword" : "plain";
+}
+
+function readQuoted(code, start) {
+  const quote = code[start];
+  let index = start + 1;
+
+  while (index < code.length) {
+    if (code[index] === "\\") {
+      index += 2;
+      continue;
+    }
+    if (code[index] === quote) {
+      index += 1;
+      break;
+    }
+    index += 1;
+  }
+
+  return code.slice(start, index);
+}
+
+function tokenizeCode(code, language) {
+  const tokens = [];
+  let plain = "";
+  let index = 0;
+
+  const pushPlain = () => {
+    if (!plain) return;
+    tokens.push({ type: "plain", text: plain });
+    plain = "";
+  };
+
+  const push = (type, text) => {
+    pushPlain();
+    tokens.push({ type, text });
+  };
+
+  while (index < code.length) {
+    const rest = code.slice(index);
+    const char = code[index];
+
+    if (rest.startsWith("//")) {
+      const end = code.indexOf("\n", index);
+      const text = end === -1 ? code.slice(index) : code.slice(index, end);
+      push("comment", text);
+      index += text.length;
+      continue;
+    }
+
+    if (rest.startsWith("/*")) {
+      const end = code.indexOf("*/", index + 2);
+      const text = end === -1 ? code.slice(index) : code.slice(index, end + 2);
+      push("comment", text);
+      index += text.length;
+      continue;
+    }
+
+    if (language === "bash" && char === "#") {
+      const end = code.indexOf("\n", index);
+      const text = end === -1 ? code.slice(index) : code.slice(index, end);
+      push("comment", text);
+      index += text.length;
+      continue;
+    }
+
+    if (char === "\"" || char === "'" || char === "`") {
+      const text = readQuoted(code, index);
+      push("string", text);
+      index += text.length;
+      continue;
+    }
+
+    const numberMatch = rest.match(/^\b\d+(?:\.\d+)?\b/);
+    if (numberMatch) {
+      push("number", numberMatch[0]);
+      index += numberMatch[0].length;
+      continue;
+    }
+
+    const wordMatch = rest.match(/^[A-Za-z_$][\w$-]*/);
+    if (wordMatch) {
+      const word = wordMatch[0];
+      const next = rest.slice(word.length);
+      const type =
+        wordTokenType(word, language) === "keyword"
+          ? "keyword"
+          : next.match(/^\s*\(/)
+            ? "function"
+            : "plain";
+
+      if (type === "plain") plain += word;
+      else push(type, word);
+      index += word.length;
+      continue;
+    }
+
+    if (/^[{}()[\],.:;=+\-*/<>|&!?]/.test(char)) {
+      push("punctuation", char);
+      index += 1;
+      continue;
+    }
+
+    plain += char;
+    index += 1;
+  }
+
+  pushPlain();
+  return tokens;
+}
+
+function HighlightedCode(code, language) {
+  return RawElement(
+    "code",
+    { className: `language-${language}` },
+    tokenizeCode(code, language).map((token, index) =>
+      RawElement(
+        "span",
+        {
+          className: token.type === "plain" ? "syntax" : `syntax syntax-${token.type}`,
+          key: `${token.type}-${index}`,
+        },
+        [token.text],
+      ),
+    ),
+  );
 }
 
 function CodeBlock(code, language = "js") {
   return Column({ gap: 0, className: "code-shell" }, [
-    Row({
-      mainAxisAlignment: "spaceBetween",
-      className: "code-toolbar",
-    }, [
-      Text(language, { size: 12, weight: 800, color: "#7d8aa0" }),
-      Button({
-        text: "Copy",
-        variant: "text",
-        onClick: () => copyCode(code),
-        style: { minHeight: "28px", padding: "4px 8px" },
-      }),
-    ]),
+    Row(
+      {
+        mainAxisAlignment: "spaceBetween",
+        className: "code-toolbar",
+      },
+      [
+        Text(language, { size: 12, weight: 900, color: "#7c8797" }),
+        Button({
+          text: "Copy",
+          variant: "text",
+          onClick: () => copyCode(code),
+          style: {
+            minHeight: "30px",
+            padding: "5px 9px",
+            color: "#dbeafe",
+          },
+        }),
+      ],
+    ),
     RawElement("pre", { className: "code-block" }, [
-      RawElement("code", {}, [code]),
+      HighlightedCode(code, language),
     ]),
   ]);
 }
 
 function Section({ id, eyebrow, title, intro, children }) {
   return RawElement("section", { id, className: "docs-section" }, [
-    Column({ gap: 16 }, [
-      Column({ gap: 8 }, [
-        eyebrow ? Text(eyebrow, { size: 12, weight: 900, color: "#2563eb", style: { textTransform: "uppercase" } }) : null,
+    Column({ gap: 18 }, [
+      Column({ gap: 9, className: "section-heading" }, [
+        eyebrow
+          ? Text(eyebrow, {
+              size: 12,
+              weight: 900,
+              color: "#0f8f67",
+              style: { textTransform: "uppercase" },
+            })
+          : null,
         Text(title, { as: "h2", size: 32, weight: 900 }),
-        intro ? Text(intro, { size: 17, color: "#5f6b7a", lineHeight: 1.65 }) : null,
+        intro
+          ? Text(intro, {
+              size: 17,
+              color: "#5b6677",
+              lineHeight: 1.65,
+              style: { maxWidth: "880px" },
+            })
+          : null,
       ]),
       ...children,
     ]),
@@ -262,24 +818,71 @@ function Section({ id, eyebrow, title, intro, children }) {
 }
 
 function HighlightCard(item) {
-  return Card({ padding: 20, radius: 8, elevation: 1, className: "highlight-card" }, [
-    Column({ gap: 10 }, [
-      Text(item.title, { as: "h3", size: 18, weight: 900 }),
-      Text(item.body, { color: "#5f6b7a", lineHeight: 1.6 }),
+  return Card(
+    { padding: 20, radius: 8, elevation: 1, className: "highlight-card" },
+    [
+      Column({ gap: 10 }, [
+        Text(item.title, { as: "h3", size: 18, weight: 900 }),
+        Text(item.body, { color: "#5b6677", lineHeight: 1.6 }),
+      ]),
+    ],
+  );
+}
+
+function StatCard(label, value, detail) {
+  return Card({ padding: 18, radius: 8, elevation: 1, className: "stat-card" }, [
+    Column({ gap: 5 }, [
+      Text(value, { size: 24, weight: 900, color: "#111827" }),
+      Text(label, { size: 13, weight: 900, color: "#0f8f67" }),
+      detail ? Text(detail, { size: 13, color: "#64748b" }) : null,
+    ]),
+  ]);
+}
+
+function ApiCard(item) {
+  return Card({ id: apiAnchor(item), padding: 16, radius: 8, elevation: 1, className: "api-card anchor-target" }, [
+    Column({ gap: 8 }, [
+      Text(item.name, {
+        as: "h3",
+        size: 17,
+        weight: 900,
+        className: "widget-name",
+      }),
+      Text(item.description, { color: "#5b6677", lineHeight: 1.55 }),
+      item.props
+        ? RawElement("code", { className: "inline-code" }, [item.props])
+        : null,
     ]),
   ]);
 }
 
 function WidgetCard(group, widget) {
-  return Card({ padding: 16, radius: 8, elevation: 1, className: "widget-card" }, [
-    Column({ gap: 8 }, [
-      Row({ gap: 8, style: { alignItems: "center", flexWrap: "wrap" } }, [
-        Text(widget[0], { as: "h3", size: 17, weight: 900 }),
-        Pill(group, "blue"),
+  return Card(
+    {
+      id: widgetAnchor(group, widget),
+      padding: 16,
+      radius: 8,
+      elevation: 1,
+      className: "widget-card anchor-target",
+    },
+    [
+      Column({ gap: 9 }, [
+        Row({ gap: 8, style: { alignItems: "center", flexWrap: "wrap" } }, [
+          Text(widget.name, {
+            as: "h3",
+            size: 17,
+            weight: 900,
+            className: "widget-name",
+          }),
+          Pill(group.title, "slate"),
+        ]),
+        Text(widget.description, { color: "#5b6677", lineHeight: 1.55 }),
+        RawElement("code", { className: "inline-code widget-props" }, [
+          widget.props,
+        ]),
       ]),
-      Text(widget[1], { color: "#5f6b7a", lineHeight: 1.55 }),
-    ]),
-  ]);
+    ],
+  );
 }
 
 function filteredWidgetGroups() {
@@ -289,67 +892,216 @@ function filteredWidgetGroups() {
   return widgetGroups
     .map((group) => ({
       ...group,
-      widgets: group.widgets.filter(([name, description]) =>
-        `${group.group} ${group.imports} ${name} ${description}`.toLowerCase().includes(term)
+      widgets: group.widgets.filter((widget) =>
+        [
+          group.title,
+          group.importPath,
+          group.summary,
+          widget.name,
+          widget.description,
+          widget.props,
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(term),
       ),
     }))
     .filter((group) => group.widgets.length);
 }
 
+function NavItem(item, depth = 0, rootId = item.id) {
+  const sectionId = item.sectionId || rootId;
+  const active =
+    activeTarget() === item.id || (depth === 0 && activeSection() === item.id);
+
+  return Column(
+    {
+      gap: 4,
+      className: `nav-node nav-node-depth-${depth}`,
+    },
+    [
+      RawElement(
+        "button",
+        {
+          type: "button",
+          className: [
+            "side-link",
+            `side-link-depth-${depth}`,
+            active ? "side-link-active" : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+          onClick: () => goToSection(item.id, sectionId),
+        },
+        [item.label],
+      ),
+      item.children?.length
+        ? Column(
+            {
+              gap: 3,
+              className: `nav-children nav-children-depth-${depth}`,
+            },
+            item.children.map((child) => NavItem(child, depth + 1, sectionId)),
+          )
+        : null,
+    ],
+  );
+}
+
+function NavigationTree(className = "") {
+  return Column(
+    { gap: 6, className: ["sidebar-nav", className].filter(Boolean).join(" ") },
+    navItems.map((item) => NavItem(item)),
+  );
+}
+
 function Sidebar() {
   return RawElement("aside", { className: "sidebar" }, [
-    Column({ gap: 20 }, [
-      Row({ gap: 12, style: { alignItems: "center" } }, [
-        Image({ src: "/favicon.svg", alt: "LuminaUI logo", width: 42, height: 42, radius: 8 }),
-        Column({ gap: 0 }, [
+    Column({ gap: 22 }, [
+      Row({ gap: 12, className: "brand-lockup" }, [
+        Image({
+          src: "/favicon.svg",
+          alt: "LuminaUI logo",
+          width: 42,
+          height: 42,
+          radius: 8,
+        }),
+        Column({ gap: 0, className: "brand-copy" }, [
           Text("LuminaUI", { weight: 900, size: 18 }),
-          Text("Documentation", { color: "#64748b", size: 12, weight: 700 }),
+          Text(`Package docs v${packageVersion}`, {
+            color: "#64748b",
+            size: 12,
+            weight: 800,
+          }),
         ]),
       ]),
-      Column({ gap: 6 }, [
-        ...navItems.map((item) =>
-          RawElement("button", {
-            type: "button",
-            className: activeSection() === item.id ? "side-link side-link-active" : "side-link",
-            onClick: () => goToSection(item.id),
-          }, [item.label])
-        ),
-      ]),
+      NavigationTree(),
     ]),
   ]);
 }
 
+function MobileDrawer() {
+  if (!drawerOpen()) return null;
+
+  return RawElement(
+    "div",
+    {
+      className: "mobile-drawer",
+      role: "presentation",
+      onClick: () => setDrawerOpen(false),
+    },
+    [
+      RawElement(
+        "aside",
+        {
+          className: "drawer-panel",
+          role: "dialog",
+          "aria-modal": "true",
+          "aria-label": "Documentation navigation",
+          onClick: (event) => event.stopPropagation(),
+        },
+        [
+          Row(
+            {
+              mainAxisAlignment: "spaceBetween",
+              gap: 12,
+              className: "drawer-header",
+            },
+            [
+              Row({ gap: 10, className: "brand-lockup" }, [
+                Image({
+                  src: "/favicon.svg",
+                  alt: "LuminaUI logo",
+                  width: 34,
+                  height: 34,
+                  radius: 7,
+                }),
+                Column({ gap: 0 }, [
+                  Text("Navigation", { weight: 900, size: 18 }),
+                  Text("Sections and widgets", {
+                    size: 12,
+                    color: "#64748b",
+                    weight: 800,
+                  }),
+                ]),
+              ]),
+              Button({
+                text: "Close",
+                variant: "text",
+                onClick: () => setDrawerOpen(false),
+              }),
+            ],
+          ),
+          NavigationTree("drawer-nav"),
+        ],
+      ),
+    ],
+  );
+}
+
 function TopBar() {
   return RawElement("header", { className: "topbar" }, [
-    Row({
-      mainAxisAlignment: "spaceBetween",
-      gap: 16,
-      style: { alignItems: "center", flexWrap: "wrap" },
-    }, [
-      Row({ gap: 10, style: { alignItems: "center" } }, [
-        Image({ src: "/favicon.svg", alt: "LuminaUI logo", width: 32, height: 32, radius: 7 }),
-        Text("LuminaUI Docs", { weight: 900, size: 18 }),
-      ]),
-      Row({ gap: 10, style: { alignItems: "center", flexWrap: "wrap" } }, [
-        LinkButton({ href: "https://www.npmjs.com/package/@neuralumina/lumina-ui", label: "npm", variant: "secondary" }),
-        LinkButton({ href: "https://github.com/AmelCMM/LuminaUI", label: "GitHub", variant: "primary" }),
-      ]),
-    ]),
+    Row(
+      {
+        mainAxisAlignment: "spaceBetween",
+        gap: 16,
+        className: "topbar-inner",
+      },
+      [
+        Row({ gap: 10, className: "topbar-brand" }, [
+          Image({
+            src: "/favicon.svg",
+            alt: "LuminaUI logo",
+            width: 32,
+            height: 32,
+            radius: 7,
+          }),
+          Column({ gap: 0 }, [
+            Text("LuminaUI Documentation", { weight: 900, size: 18 }),
+            Text(packageName, { size: 12, color: "#64748b", weight: 800 }),
+          ]),
+        ]),
+        Row({ gap: 10, className: "doc-actions" }, [
+          Button({
+            text: "Menu",
+            variant: "secondary",
+            className: "drawer-toggle",
+            onClick: () => setDrawerOpen(true),
+          }),
+          LinkButton({
+            href: "https://www.npmjs.com/package/@neuralumina/lumina-ui",
+            label: "npm",
+            variant: "secondary",
+          }),
+          LinkButton({
+            href: "https://github.com/AmelCMM/LuminaUI",
+            label: "GitHub",
+            variant: "primary",
+          }),
+        ]),
+      ],
+    ),
   ]);
 }
 
 function OverviewSection() {
   return Section({
     id: "overview",
-    eyebrow: "Framework",
-    title: "Build web interfaces with widget-tree JavaScript.",
-    intro: "LuminaUI is a lightweight, Flutter-inspired UI library for plain JavaScript apps. It gives you composable widgets, direct DOM rendering, and explicit state without framework runtime baggage.",
+    eyebrow: "Package",
+    title: "LuminaUI is a widget library for plain JavaScript apps.",
+    intro:
+      "This documentation covers the public npm package surface for @neuralumina/lumina-ui, including installation, state, imports, and every widget exported by the current package version.",
     children: [
-      Row({ gap: 12, style: { flexWrap: "wrap" } }, [
-        Pill("No JSX", "green"),
-        Pill("ES modules", "blue"),
-        Pill("Real DOM", "amber"),
-        Pill("Zero runtime dependencies", "slate"),
+      Row({ gap: 12, className: "pill-row" }, [
+        Pill(`v${packageVersion}`, "teal"),
+        Pill(`${totalWidgets} widgets`, "blue"),
+        Pill(packageLicense, "amber"),
+        Pill("ES modules", "slate"),
+      ]),
+      Row({ gap: 14, className: "stats-grid" }, [
+        StatCard("Current package", `v${packageVersion}`, "Read from package.json"),
+        StatCard("Public widgets", String(totalWidgets), "Documented below"),
+        StatCard("Core exports", String(coreApis.length), "Renderer, state, DOM, theme"),
       ]),
       Row({ gap: 16, className: "highlight-grid" }, highlights.map(HighlightCard)),
     ],
@@ -360,13 +1112,16 @@ function InstallationSection() {
   return Section({
     id: "installation",
     eyebrow: "Setup",
-    title: "Install from npm.",
-    intro: "Use LuminaUI inside any JavaScript project that can import ESM packages. Vite works especially well for local development.",
+    title: "Install the latest npm package.",
+    intro:
+      "Install the package from npm and import it from any ESM-capable app. Vite, Parcel, Webpack, and modern dev servers can resolve the package entry directly.",
     children: [
       CodeBlock(installCode, "bash"),
-      Row({ gap: 12, style: { flexWrap: "wrap" } }, [
-        LinkButton({ href: "https://vite.dev/guide/", label: "Vite guide", variant: "secondary" }),
-        LinkButton({ href: "https://www.npmjs.com/package/@neuralumina/lumina-ui", label: "Package page", variant: "secondary" }),
+      CodeBlock(packageCode, "json"),
+      Row({ gap: 12, className: "pill-row" }, [
+        Pill(`latest: ${packageVersion}`, "teal"),
+        Pill("sideEffects: false", "blue"),
+        Pill("browser ESM", "amber"),
       ]),
     ],
   });
@@ -377,7 +1132,8 @@ function QuickStartSection() {
     id: "quick-start",
     eyebrow: "First app",
     title: "Mount a widget tree.",
-    intro: "Every LuminaUI app starts with a component function and mount(). The component returns widgets, strings, arrays, null, or real DOM nodes.",
+    intro:
+      "A LuminaUI app is a component function that returns widgets, text, arrays, empty values, or real DOM nodes. mount() renders the tree into your root element.",
     children: [CodeBlock(quickStartCode)],
   });
 }
@@ -387,28 +1143,31 @@ function MentalModelSection() {
     id: "mental-model",
     eyebrow: "Concepts",
     title: "Widgets are functions that describe DOM.",
-    intro: "A widget returns a small virtual node object. LuminaUI turns that tree into DOM and patches later renders.",
+    intro:
+      "Most widgets accept either children directly or a props object followed by children. Numeric dimensions are generally converted to pixels; strings pass through as CSS values.",
     children: [
       Row({ gap: 16, className: "docs-two-col" }, [
         Column({ gap: 12 }, [
-          Text("Supported render values", { as: "h3", size: 20, weight: 900 }),
+          Text("Renderable values", { as: "h3", size: 20, weight: 900 }),
           RawElement("ul", { className: "doc-list" }, [
             RawElement("li", {}, ["Virtual node objects: { tag, props, children, key }"]),
             RawElement("li", {}, ["Strings and numbers"]),
             RawElement("li", {}, ["Arrays of children"]),
-            RawElement("li", {}, ["null, undefined, or false for empty output"]),
-            RawElement("li", {}, ["Real DOM Node values when needed"]),
+            RawElement("li", {}, ["null, undefined, false, and true for empty output"]),
+            RawElement("li", {}, ["Real DOM Node values when direct DOM interop is needed"]),
           ]),
         ]),
         Column({ gap: 12 }, [
           Text("Calling styles", { as: "h3", size: 20, weight: 900 }),
           CodeBlock(`Column([
   Text("Compact child style"),
-])
+]);
 
 Column({ gap: 12, padding: 16 }, [
   Text("Configured props style"),
-])`),
+]);
+
+Padding({ padding: 16, child: Text("Single child prop") });`),
         ]),
       ]),
     ],
@@ -419,53 +1178,58 @@ function StateSection() {
   return Section({
     id: "state",
     eyebrow: "Reactivity",
-    title: "State is explicit and subscription-based.",
-    intro: "useState returns [get, set, subscribe]. Subscribe the renderer forceUpdate function once, then read values through getters during render.",
+    title: "State uses explicit getters, setters, and subscribers.",
+    intro:
+      "useState returns [get, set, subscribe]. Subscribe the renderer forceUpdate function once, then read state through getters during render.",
     children: [
       CodeBlock(stateCode),
-      Row({ gap: 16, className: "docs-two-col" }, [
-        Column({ gap: 8 }, [
-          Text("Getter", { weight: 900, size: 18 }),
-          Text("Call getValue() inside your render function to read current state.", { color: "#5f6b7a", lineHeight: 1.6 }),
-        ]),
-        Column({ gap: 8 }, [
-          Text("Setter", { weight: 900, size: 18 }),
-          Text("Call setValue(next) or setValue((previous) => next) from events.", { color: "#5f6b7a", lineHeight: 1.6 }),
-        ]),
-        Column({ gap: 8 }, [
-          Text("Subscribe", { weight: 900, size: 18 }),
-          Text("Register forceUpdate once so state changes trigger a render.", { color: "#5f6b7a", lineHeight: 1.6 }),
-        ]),
-      ]),
+      Row({ gap: 16, className: "api-grid" }, coreApis.map(ApiCard)),
     ],
   });
 }
 
+function WidgetFamily(group) {
+  return RawElement("article", { id: groupAnchor(group), className: "widget-family anchor-target" }, [
+    Column({ gap: 14 }, [
+      Row({ gap: 12, className: "widget-family-heading" }, [
+        Column({ gap: 7, style: { minWidth: 0 } }, [
+          Text(group.title, { as: "h3", size: 24, weight: 900 }),
+          Text(group.summary, { color: "#5b6677", lineHeight: 1.6 }),
+        ]),
+        Pill(`${group.widgets.length} exports`, "blue"),
+      ]),
+      RawElement("code", { className: "import-path" }, [group.importPath]),
+      Row(
+        { gap: 14, className: "widget-grid" },
+        group.widgets.map((widget) => WidgetCard(group, widget)),
+      ),
+      CodeBlock(group.example),
+    ]),
+  ]);
+}
+
 function WidgetsSection() {
   const groups = filteredWidgetGroups();
+  const visibleCount = groups.reduce((sum, group) => sum + group.widgets.length, 0);
 
   return Section({
     id: "widgets",
-    eyebrow: "API",
-    title: "Widget reference.",
-    intro: "Search the current public widget families exported by @neuralumina/lumina-ui.",
+    eyebrow: "Reference",
+    title: "Full widget reference.",
+    intro:
+      "Every public widget exported by @neuralumina/lumina-ui is grouped by module below. Use search to narrow by widget name, module, purpose, or key props.",
     children: [
-      TextField({
-        value: searchTerm(),
-        placeholder: "Search widgets, groups, or props...",
-        onChange: setSearchTerm,
-        className: "docs-search",
-      }),
+      Row({ gap: 12, className: "search-row" }, [
+        TextField({
+          value: searchTerm(),
+          placeholder: "Search widgets, groups, imports, or props...",
+          onChange: setSearchTerm,
+          className: "docs-search",
+        }),
+        Pill(`${visibleCount} shown`, "teal"),
+      ]),
       groups.length
-        ? Column({ gap: 28 }, groups.map((group) =>
-            Column({ gap: 12 }, [
-              Row({ gap: 12, style: { alignItems: "baseline", flexWrap: "wrap" } }, [
-                Text(group.group, { as: "h3", size: 22, weight: 900 }),
-                Text(group.imports, { size: 13, color: "#64748b", maxLines: 2 }),
-              ]),
-              Row({ gap: 14, className: "widget-grid" }, group.widgets.map((widget) => WidgetCard(group.group, widget))),
-            ])
-          ))
+        ? Column({ gap: 34 }, groups.map(WidgetFamily))
         : Text("No widgets match that search.", { color: "#64748b" }),
     ],
   });
@@ -476,7 +1240,8 @@ function ImportsSection() {
     id: "imports",
     eyebrow: "Modules",
     title: "Import from the package entry or subpaths.",
-    intro: "The top-level entry exports the framework API. Subpath imports are available when you want smaller, explicit module boundaries.",
+    intro:
+      "The top-level entry exports the framework API and all widgets. Subpath imports are available when you want explicit module boundaries.",
     children: [CodeBlock(importCode)],
   });
 }
@@ -484,19 +1249,34 @@ function ImportsSection() {
 function ExamplesSection() {
   return Section({
     id: "examples",
-    eyebrow: "Patterns",
-    title: "Common composition pattern.",
-    intro: "Keep structure, behavior, and local styles together in one JavaScript widget tree.",
+    eyebrow: "Pattern",
+    title: "Compose production UI from small widgets.",
+    intro:
+      "LuminaUI widgets stay close to browser concepts, so layout, state, and events remain easy to inspect while still reading like a UI tree.",
     children: [
-      CodeBlock(layoutCode),
+      CodeBlock(compositionCode),
       Container({ className: "live-example" }, [
         Column({ gap: 16 }, [
-          Row({ gap: 8, mainAxisAlignment: "spaceBetween", style: { flexWrap: "wrap" } }, [
+          Row({ gap: 8, mainAxisAlignment: "spaceBetween", className: "live-header" }, [
             Text("Live preview", { weight: 900, size: 18 }),
-            Button({ text: "Deploy", onClick: () => notify("Deploy action clicked") }),
+            Button({
+              text: "View logs",
+              variant: "secondary",
+              onClick: () => notify("Preview action clicked"),
+            }),
           ]),
-          Card({ padding: 16, radius: 8, elevation: 1 }, [
-            Text("Everything here is a LuminaUI widget.", { color: "#5f6b7a" }),
+          Divider(),
+          Column({ gap: 12 }, [
+            Row({ gap: 8, mainAxisAlignment: "spaceBetween", className: "live-header" }, [
+              Text("Release health", { weight: 900, size: 18 }),
+              Pill("72%", "teal"),
+            ]),
+            RawElement("div", { className: "preview-progress" }, [
+              RawElement("span", { style: { width: "72%" } }, []),
+            ]),
+            Text("Everything in this preview is rendered from LuminaUI widgets.", {
+              color: "#5b6677",
+            }),
           ]),
         ]),
       ]),
@@ -509,14 +1289,14 @@ function DeploymentSection() {
     id: "deployment",
     eyebrow: "Production",
     title: "Build static output with Vite.",
-    intro: "LuminaUI ships as browser-friendly ESM. Build with Vite and deploy the generated dist folder to any static host.",
+    intro:
+      "LuminaUI ships browser-friendly ESM. Build this documentation site with Vite and deploy the generated dist folder to any static host.",
     children: [
-      CodeBlock(`npm run build
-npm run preview`, "bash"),
+      CodeBlock(buildCode, "bash"),
       RawElement("ul", { className: "doc-list" }, [
         RawElement("li", {}, ["Vite writes optimized assets to dist/."]),
-        RawElement("li", {}, ["The built files can be hosted on Vercel, Netlify, GitHub Pages, Cloudflare Pages, or any static server."]),
-        RawElement("li", {}, ["No server runtime is required for the docs site itself."]),
+        RawElement("li", {}, ["The built docs can run on static hosts such as Vercel, Netlify, Cloudflare Pages, GitHub Pages, or S3."]),
+        RawElement("li", {}, ["No server runtime is required for the documentation itself."]),
       ]),
     ],
   });
@@ -541,6 +1321,7 @@ function App(forceUpdate) {
 
   return Container({ className: "docs-app" }, [
     TopBar(),
+    MobileDrawer(),
     Row({ className: "docs-layout", gap: 0, style: { alignItems: "flex-start" } }, [
       Sidebar(),
       DocsContent(),
