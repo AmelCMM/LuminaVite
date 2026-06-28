@@ -32,11 +32,13 @@ const baseNavItems = [
   { id: "overview", label: "Overview" },
   { id: "installation", label: "Installation" },
   { id: "quick-start", label: "Quick Start" },
+  { id: "tutorial", label: "Tutorial" },
   { id: "mental-model", label: "Mental Model" },
   { id: "state", label: "State" },
   { id: "widgets", label: "Widgets" },
   { id: "imports", label: "Imports" },
   { id: "examples", label: "Examples" },
+  { id: "patterns", label: "Patterns" },
   { id: "deployment", label: "Deployment" },
 ];
 
@@ -551,6 +553,12 @@ const navItems = baseNavItems.map((item) => {
       { id: "widget-layout-column", label: "Column widget", sectionId: "widgets" },
       { id: "widget-controls-button", label: "Button widget", sectionId: "widgets" },
     ],
+    tutorial: [
+      { id: "tutorial-step-1", label: "Step 1 — Hello World", sectionId: "tutorial" },
+      { id: "tutorial-step-2", label: "Step 2 — State", sectionId: "tutorial" },
+      { id: "tutorial-step-3", label: "Step 3 — Input & Lists", sectionId: "tutorial" },
+      { id: "tutorial-step-4", label: "Step 4 — Todo App", sectionId: "tutorial" },
+    ],
     "mental-model": [
       { id: "mental-model", label: "Widget tree" },
       { id: "widget-text-text", label: "Text widget", sectionId: "widgets" },
@@ -577,6 +585,12 @@ const navItems = baseNavItems.map((item) => {
       { id: "widget-layout-card", label: "Card widget", sectionId: "widgets" },
       { id: "widget-feedback-linear-progress-indicator", label: "LinearProgressIndicator", sectionId: "widgets" },
       { id: "widget-controls-button", label: "Button widget", sectionId: "widgets" },
+    ],
+    patterns: [
+      { id: "pattern-theme", label: "Theme switching", sectionId: "patterns" },
+      { id: "pattern-list", label: "Searchable list", sectionId: "patterns" },
+      { id: "pattern-form", label: "Form validation", sectionId: "patterns" },
+      { id: "pattern-routing", label: "Multi-page routing", sectionId: "patterns" },
     ],
     deployment: [
       { id: "deployment", label: "npm run build" },
@@ -677,6 +691,451 @@ Card({ padding: 18, elevation: 2 }, [
 
 const buildCode = `npm run build
 npm run preview`;
+
+// --- Tutorial code snippets ---
+
+const tutorialStep1Code = `import { mount, Column, Text, Button } from "@neuralumina/lumina-ui";
+
+// App is a plain function that returns a widget tree —
+// nested function calls that describe what you want on screen.
+function App() {
+  return Column({ gap: 16, padding: 24 }, [
+    Text("Hello, LuminaUI!", { as: "h1", size: 28, weight: 900 }),
+    Text("This is your first widget tree.", { color: "#5b6677" }),
+    Button({
+      text: "Click me",
+      onClick: () => alert("Hello from LuminaUI!"),
+    }),
+  ]);
+}
+
+// mount() converts the widget tree into real DOM nodes
+// inside the container element you provide.
+mount(App, document.getElementById("app"));`;
+
+const tutorialStep2Code = `import { mount, useState, Column, Row, Text, Button } from "@neuralumina/lumina-ui";
+
+// useState returns three things:
+//   count()         — getter: call it to read the current value
+//   setCount        — setter: call it to change the value
+//   subscribeCount  — connect a callback that runs on every change
+const [count, setCount, subscribeCount] = useState(0);
+
+// A WeakSet prevents subscribing the same forceUpdate twice.
+// App is called on every render — without this guard, subscribeCount
+// would add a new listener each time, making the count jump per click.
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeCount(forceUpdate);  // re-render whenever count changes
+  subscribed.add(forceUpdate);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  return Column({ gap: 12, padding: 24 }, [
+    Text(\`Count: \${count()}\`, { size: 20, weight: 900 }),
+    Row({ gap: 8 }, [
+      Button({ text: "-", onClick: () => setCount((n) => n - 1) }),
+      Button({ text: "+", onClick: () => setCount((n) => n + 1) }),
+      Button({ text: "Reset", variant: "secondary", onClick: () => setCount(0) }),
+    ]),
+  ]);
+}
+
+mount(App, document.getElementById("app"));`;
+
+const tutorialStep3Code = `import {
+  mount, useState, Column, Row, Text, TextField, Button, FormField,
+} from "@neuralumina/lumina-ui";
+
+// Controlled input: value always comes from state. Every keystroke
+// calls onChange which updates state, which re-renders the field.
+const [name,  setName,  subscribeName]  = useState("");
+const [names, setNames, subscribeNames] = useState([]);
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeName(forceUpdate);
+  subscribeNames(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+function addName() {
+  const trimmed = name().trim();
+  if (!trimmed) return;                        // ignore empty input
+  setNames((prev) => [...prev, trimmed]);      // append to list
+  setName("");                                 // clear the input
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  return Column({ gap: 16, padding: 24 }, [
+    Text("Guest list", { as: "h2", size: 22, weight: 900 }),
+    Row({ gap: 8, style: { alignItems: "flex-end" } }, [
+      FormField({ label: "Name" }, [
+        TextField({ value: name(), placeholder: "Enter a name", onChange: setName }),
+      ]),
+      Button({ text: "Add", onClick: addName }),
+    ]),
+    // Render the list from state — just an array mapped to widgets.
+    names().length
+      ? Column({ gap: 6 }, names().map((n, i) => Text(\`\${i + 1}. \${n}\`)))
+      : Text("No names yet.", { color: "#9ca3af" }),
+  ]);
+}
+
+mount(App, document.getElementById("app"));`;
+
+const tutorialTodoCode = `import {
+  mount, useState,
+  Column, Row, Text, TextField, Button, Checkbox,
+  Divider, Scaffold, AppBar, Padding,
+} from "@neuralumina/lumina-ui";
+
+// --- State ---
+const [todos, setTodos, subscribeTodos] = useState([]);
+const [input, setInput, subscribeInput] = useState("");
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeTodos(forceUpdate);
+  subscribeInput(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+// --- Actions ---
+let nextId = 1;
+
+function addTodo() {
+  const text = input().trim();
+  if (!text) return;
+  setTodos((prev) => [...prev, { id: nextId++, text, done: false }]);
+  setInput("");
+}
+
+function toggleTodo(id) {
+  setTodos((prev) =>
+    prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)),
+  );
+}
+
+function removeTodo(id) {
+  setTodos((prev) => prev.filter((t) => t.id !== id));
+}
+
+// --- Components ---
+// TodoItem is a reusable function widget. The key prop lets
+// LuminaUI track each item across re-renders as the list changes.
+function TodoItem(todo) {
+  return Row({ key: todo.id, gap: 8, style: { alignItems: "center" } }, [
+    Checkbox({ checked: todo.done, onChange: () => toggleTodo(todo.id) }),
+    Text(todo.text, {
+      style: { flex: 1, textDecoration: todo.done ? "line-through" : "none" },
+      color: todo.done ? "#9ca3af" : "#111827",
+    }),
+    Button({
+      text: "Delete",
+      variant: "text",
+      onClick: () => removeTodo(todo.id),
+      style: { color: "#ef4444" },
+    }),
+  ]);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  const done  = todos().filter((t) => t.done).length;
+  const total = todos().length;
+
+  return Scaffold({
+    appBar: AppBar({ title: "My Todos" }),
+    body: Padding({ padding: 20 }, [
+      Column({ gap: 16 }, [
+        Row({ gap: 8 }, [
+          TextField({
+            value: input(),
+            placeholder: "What needs doing?",
+            onChange: setInput,
+            style: { flex: 1 },
+          }),
+          Button({ text: "Add", onClick: addTodo }),
+        ]),
+        total > 0
+          ? Text(\`\${done} of \${total} done\`, { color: "#6b7280", size: 13 })
+          : null,
+        Divider(),
+        total > 0
+          ? Column({ gap: 8 }, todos().map(TodoItem))
+          : Text("No tasks yet — add one above.", { color: "#9ca3af" }),
+      ]),
+    ]),
+  });
+}
+
+mount(App, document.getElementById("app"));`;
+
+// --- Patterns code snippets ---
+
+const patternThemeCode = `import {
+  mount, useState,
+  Scaffold, AppBar, Padding, Column, Card, Text, Switch,
+  ThemeProvider, createTheme,
+} from "@neuralumina/lumina-ui";
+
+// createTheme deep-merges your overrides with the default token set.
+const lightTheme = createTheme({ colors: { surface: "#f8fafc", text: "#0f172a" } });
+const darkTheme  = createTheme({ colors: { surface: "#0f172a", text: "#e2e8f0", primary: "#34d399" } });
+
+const [dark, setDark, subscribeDark] = useState(false);
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeDark(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  // ThemeProvider emits scoped CSS custom properties for the chosen theme.
+  // Swap the theme object and every child widget updates immediately.
+  return ThemeProvider({ theme: dark() ? darkTheme : lightTheme, applySurface: true }, [
+    Scaffold({
+      appBar: AppBar({
+        title: "Theme demo",
+        actions: [Switch({ value: dark(), onChange: setDark, ariaLabel: "Dark mode" })],
+      }),
+      body: Padding({ padding: 24 }, [
+        Card({ padding: 20, elevation: 2 }, [
+          Column({ gap: 8 }, [
+            Text("Adaptive card", { weight: 900, size: 18 }),
+            Text("This card responds to the active theme automatically."),
+          ]),
+        ]),
+      ]),
+    }),
+  ]);
+}
+
+mount(App, document.getElementById("app"));`;
+
+const patternListCode = `import {
+  mount, useState,
+  Scaffold, AppBar, Padding, Column, Row, Card, Text, TextField, Badge, GridView,
+} from "@neuralumina/lumina-ui";
+
+const products = [
+  { id: 1, name: "Widget Pro",  category: "Tools",       stock: 24 },
+  { id: 2, name: "Gadget Lite", category: "Accessories", stock: 8 },
+  { id: 3, name: "Super Stack", category: "Tools",       stock: 0 },
+  { id: 4, name: "Nano Kit",    category: "Accessories", stock: 57 },
+];
+
+const [search, setSearch, subscribeSearch] = useState("");
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeSearch(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+function ProductCard(product) {
+  const inStock = product.stock > 0;
+  return Card({ key: product.id, padding: 16, elevation: 1 }, [
+    Column({ gap: 8 }, [
+      Row({ gap: 8, style: { alignItems: "center" } }, [
+        Text(product.name, { weight: 900, size: 15, style: { flex: 1 } }),
+        Badge({ label: product.category }),
+      ]),
+      Text(inStock ? \`\${product.stock} in stock\` : "Out of stock", {
+        size: 13,
+        color: inStock ? "#059669" : "#ef4444",
+      }),
+    ]),
+  ]);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  const term = search().toLowerCase();
+  // Derive the filtered list directly in render — no extra state needed.
+  const visible = term
+    ? products.filter(
+        (p) =>
+          p.name.toLowerCase().includes(term) ||
+          p.category.toLowerCase().includes(term),
+      )
+    : products;
+
+  return Scaffold({
+    appBar: AppBar({ title: "Product Catalog" }),
+    body: Padding({ padding: 20 }, [
+      Column({ gap: 14 }, [
+        TextField({ value: search(), placeholder: "Search products…", onChange: setSearch }),
+        Text(\`\${visible.length} of \${products.length} results\`, { color: "#6b7280", size: 13 }),
+        GridView({ items: visible, minColumnWidth: 200, gap: 12, itemBuilder: ProductCard }),
+      ]),
+    ]),
+  });
+}
+
+mount(App, document.getElementById("app"));`;
+
+const patternFormCode = `import {
+  mount, useState,
+  Column, Text, Button, TextField, TextArea, Dropdown, FormField, Form,
+  Card, Padding, SnackBar, Scaffold, AppBar,
+} from "@neuralumina/lumina-ui";
+
+const roleOptions = [
+  { label: "Designer", value: "designer" },
+  { label: "Engineer", value: "engineer" },
+  { label: "Manager",  value: "manager" },
+];
+
+const [name,   setName,   subscribeName]   = useState("");
+const [role,   setRole,   subscribeRole]   = useState("");
+const [bio,    setBio,    subscribeBio]    = useState("");
+const [errors, setErrors, subscribeErrors] = useState({});
+const [saved,  setSaved,  subscribeSaved]  = useState(false);
+const subscribed = new WeakSet();
+
+function bindState(forceUpdate) {
+  if (subscribed.has(forceUpdate)) return;
+  subscribeName(forceUpdate);
+  subscribeRole(forceUpdate);
+  subscribeBio(forceUpdate);
+  subscribeErrors(forceUpdate);
+  subscribeSaved(forceUpdate);
+  subscribed.add(forceUpdate);
+}
+
+function validate() {
+  const errs = {};
+  if (!name().trim())     errs.name = "Name is required.";
+  if (!role())            errs.role = "Please choose a role.";
+  if (bio().length > 160) errs.bio  = "Bio must be 160 characters or fewer.";
+  setErrors(errs);
+  return Object.keys(errs).length === 0;
+}
+
+function handleSubmit() {
+  if (!validate()) return;
+  // POST to your API here, then show success:
+  setSaved(true);
+  setTimeout(() => setSaved(false), 3000);
+}
+
+function App(forceUpdate) {
+  bindState(forceUpdate);
+
+  return Column([
+    Scaffold({
+      appBar: AppBar({ title: "Create Profile" }),
+      body: Padding({ padding: 24 }, [
+        Card({ padding: 20, elevation: 2 }, [
+          // Form prevents the default browser submit and calls onSubmit.
+          Form({ onSubmit: handleSubmit, gap: 16 }, [
+            FormField({ label: "Full name", required: true, errorText: errors().name }, [
+              TextField({ value: name(), onChange: setName, placeholder: "Jane Doe" }),
+            ]),
+            FormField({ label: "Role", required: true, errorText: errors().role }, [
+              Dropdown({ value: role(), onChange: setRole, options: roleOptions, placeholder: "Choose role" }),
+            ]),
+            FormField({
+              label: "Bio",
+              helperText: \`\${bio().length} / 160 characters\`,
+              errorText: errors().bio,
+            }, [
+              TextArea({ value: bio(), onChange: setBio, rows: 3, placeholder: "Tell us about yourself" }),
+            ]),
+            Button({ text: "Save profile", type: "submit" }),
+          ]),
+        ]),
+      ]),
+    }),
+    SnackBar({
+      open: saved(),
+      message: "Profile saved!",
+      action: Button({ text: "OK", variant: "text", onClick: () => setSaved(false) }),
+    }),
+  ]);
+}
+
+mount(App, document.getElementById("app"));`;
+
+const patternRoutingCode = `import {
+  mount,
+  Column, Text, Padding, Card,
+  createRouter, Router, NavLink, Scaffold, AppBar,
+} from "@neuralumina/lumina-ui";
+
+// --- Page components ---
+function HomePage() {
+  return Column({ gap: 12 }, [
+    Text("Home", { as: "h1", size: 28, weight: 900 }),
+    Text("You are on the home page."),
+  ]);
+}
+
+function AboutPage() {
+  return Column({ gap: 12 }, [
+    Text("About", { as: "h1", size: 28, weight: 900 }),
+    Text("LuminaUI is a Flutter-inspired widget library for the web."),
+  ]);
+}
+
+// Dynamic route — the :id segment is extracted from the URL
+// and passed as params.id to the component function.
+function ProductPage({ params }) {
+  return Column({ gap: 12 }, [
+    Text(\`Product #\${params.id}\`, { as: "h1", size: 28, weight: 900 }),
+    Card({ padding: 16, elevation: 1 }, [
+      Text(\`Showing details for product ID: \${params.id}\`),
+    ]),
+  ]);
+}
+
+// --- Router setup ---
+// createRouter returns a router instance used by Router and NavLink.
+const router = createRouter({
+  routes: [
+    { path: "/",            component: HomePage },
+    { path: "/about",       component: AboutPage },
+    { path: "/product/:id", component: ProductPage },
+    { path: "*",            child: Text("404 — Page not found", { color: "#ef4444" }) },
+  ],
+});
+
+function App() {
+  return Scaffold({
+    appBar: AppBar({
+      title: "Routing demo",
+      actions: [
+        // NavLink highlights automatically when its path matches the current URL.
+        NavLink({ router, to: "/",           label: "Home",    exact: true }),
+        NavLink({ router, to: "/about",      label: "About" }),
+        NavLink({ router, to: "/product/42", label: "Product" }),
+      ],
+    }),
+    body: Padding({ padding: 24 }, [
+      // Router renders the component that matches the current URL.
+      Router({ router }),
+    ]),
+  });
+}
+
+mount(App, document.getElementById("app"));`;
 
 const jsKeywords = new Set([
   "as",
@@ -1444,16 +1903,122 @@ function DeploymentSection() {
   });
 }
 
+function TutorialSection() {
+  return Section({
+    id: "tutorial",
+    eyebrow: "Learn",
+    title: "Build your first app, step by step.",
+    intro:
+      "Four short examples that take you from a static widget tree to a fully reactive todo app. Each step introduces one new concept. Copy any example into a fresh project and open it in the browser to try it.",
+    children: [
+      Column({ id: "tutorial-step-1", className: "anchor-target", gap: 10 }, [
+        Text("Step 1 — Your first widget tree", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "An App function returns widgets. Column stacks them vertically. Text and Button are the most common starting widgets. mount() turns the tree into real DOM nodes.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(tutorialStep1Code),
+      ]),
+      Column({ id: "tutorial-step-2", className: "anchor-target", gap: 10 }, [
+        Text("Step 2 — Reactive state", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "useState returns [get, set, subscribe]. Subscribe forceUpdate once so every change triggers a re-render. Read the getter inside render — each call returns the current value at that moment.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(tutorialStep2Code),
+        RawElement("div", {
+          style: {
+            padding: "13px 16px",
+            border: "1px solid rgba(15,143,103,0.22)",
+            borderRadius: "8px",
+            background: "rgba(15,143,103,0.06)",
+          },
+        }, [
+          Column({ gap: 5 }, [
+            Text("Why WeakSet?", { weight: 900, size: 13, color: "#0c6f52" }),
+            Text(
+              "App runs on every render. Without the WeakSet guard, subscribeCount would register a new listener each time and the counter would update multiple values per click.",
+              { size: 13, color: "#374151", lineHeight: 1.6 },
+            ),
+          ]),
+        ]),
+      ]),
+      Column({ id: "tutorial-step-3", className: "anchor-target", gap: 10 }, [
+        Text("Step 3 — Controlled input and lists", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "TextField is a controlled widget — its value always comes from state and every keystroke calls onChange. Lists are just JavaScript arrays mapped to widget arrays. No special list API is needed.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(tutorialStep3Code),
+      ]),
+      Column({ id: "tutorial-step-4", className: "anchor-target", gap: 10 }, [
+        Text("Step 4 — A complete todo app", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "State, controlled input, list rendering, Checkbox, and the Scaffold shell combined into a full working app. Add key to each list item so LuminaUI can track items accurately as the list changes.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(tutorialTodoCode),
+      ]),
+    ],
+  });
+}
+
+function PatternsSection() {
+  return Section({
+    id: "patterns",
+    eyebrow: "Cookbook",
+    title: "Common UI patterns with full code.",
+    intro:
+      "Ready-to-copy patterns for the most common real-world scenarios. Each example is self-contained and imports only from the public LuminaUI package. Use these as starting points for your own features.",
+    children: [
+      Column({ id: "pattern-theme", className: "anchor-target", gap: 10 }, [
+        Text("Theme switching", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "createTheme produces a token set by merging your overrides with the defaults. ThemeProvider applies the tokens as scoped CSS variables. Swap the theme object on a state change and every child widget updates instantly — no prop drilling required.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(patternThemeCode),
+      ]),
+      Column({ id: "pattern-list", className: "anchor-target", gap: 10 }, [
+        Text("Searchable product list", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "Derive the filtered list from search state directly in the render function. The filtered array is a local variable that recomputes on every render — no extra state, no useEffect, no memoization needed for small datasets.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(patternListCode),
+      ]),
+      Column({ id: "pattern-form", className: "anchor-target", gap: 10 }, [
+        Text("Form with validation", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "Keep one errors object in state. Form prevents the default browser submit and calls your onSubmit handler. Populate errorText on each FormField to show inline errors. A SnackBar confirms success without a page navigation.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(patternFormCode),
+      ]),
+      Column({ id: "pattern-routing", className: "anchor-target", gap: 10 }, [
+        Text("Multi-page routing", { as: "h3", size: 20, weight: 900 }),
+        Text(
+          "createRouter registers your routes. Router renders the matched page. NavLink highlights the active link automatically. Dynamic segments like :id are extracted from the URL and arrive as params inside the component function.",
+          { color: "#5b6677", lineHeight: 1.65 },
+        ),
+        CodeBlock(patternRoutingCode),
+      ]),
+    ],
+  });
+}
+
 function DocsContent() {
   return RawElement("main", { className: "docs-content" }, [
     OverviewSection(),
     InstallationSection(),
     QuickStartSection(),
+    TutorialSection(),
     MentalModelSection(),
     StateSection(),
     WidgetsSection(),
     ImportsSection(),
     ExamplesSection(),
+    PatternsSection(),
     DeploymentSection(),
   ]);
 }
